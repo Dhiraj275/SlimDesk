@@ -1,9 +1,7 @@
-import express, { type Express, type Request, type Response } from 'express';
+import express from "express";
+import authRouter from "./features/auth/auth.routes";
 
-const app: Express = express();
-
-app.get('/', (req: Request, res: Response) => {
-    res.send('Hello World!');
-});
-
-app.listen(3000);
+const app = express();
+app.use(express.json());
+app.use("/auth", authRouter)
+export default app;
