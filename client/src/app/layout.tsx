@@ -1,38 +1,44 @@
-import Providers from '@/components/layout/providers';
-import { Toaster } from '@/components/ui/sonner';
-import { fontVariables } from '@/components/themes/font.config';
-import { DEFAULT_THEME, THEMES } from '@/components/themes/theme.config';
-import ThemeProvider from '@/components/themes/theme-provider';
-import { cn } from '@/lib/utils';
+import Providers from '@/shared/components/layout/providers';
+import { fontVariables } from '@/shared/components/themes/font.config';
+import ThemeProvider from '@/shared/components/themes/theme-provider';
+import { DEFAULT_THEME } from '@/shared/components/themes/theme.config';
+import { Toaster } from '@/shared/components/ui/sonner';
+import { cn } from '@/shared/utils/utils';
 import type { Metadata, Viewport } from 'next';
-import { cookies } from 'next/headers';
 import NextTopLoader from 'nextjs-toploader';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
-import '../styles/globals.css';
 
+import '../styles/globals.css';
 const META_THEME_COLORS = {
   light: '#ffffff',
   dark: '#09090b'
 };
 
 export const metadata: Metadata = {
-  title: 'Next Shadcn',
-  description: 'Basic dashboard with Next.js and Shadcn'
+  title: 'SlimDesk — Lightweight CRM',
+  description: 'A lightweight CRM for freelancers, agencies, and small businesses.',
+  other: {
+    'darkreader-lock': ''
+  }
 };
 
 export const viewport: Viewport = {
   themeColor: META_THEME_COLORS.light
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
-  const activeThemeValue = cookieStore.get('active_theme')?.value;
-  const isValidTheme = THEMES.some((t) => t.value === activeThemeValue);
-  const themeToApply = isValidTheme ? activeThemeValue! : DEFAULT_THEME;
+export default async function RootLayout({
+  children
+}: {
+  children: React.ReactNode;
+}) {
+  // const cookieStore = await cookies();
+  // const activeThemeValue = cookieStore.get('active_theme')?.value;
+  const themeToApply = DEFAULT_THEME;
 
   return (
-    <html lang='en' suppressHydrationWarning data-theme={themeToApply}>
+    <html lang='en' suppressHydrationWarning data-theme={themeToApply} className={fontVariables}>
       <head>
+        <meta name='darkreader-lock' content='' />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -47,6 +53,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body
+        suppressHydrationWarning
         className={cn(
           'bg-background overflow-x-hidden overscroll-none font-sans antialiased',
           fontVariables

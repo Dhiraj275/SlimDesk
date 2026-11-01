@@ -1,5 +1,15 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage
+} from '@/shared/components/ui/avatar';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  CardDescription
+} from '@/shared/components/ui/card';
 
 const salesData = [
   {

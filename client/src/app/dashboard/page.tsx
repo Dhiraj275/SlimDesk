@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-
-export default async function Dashboard() {
+const Index = () => {
   redirect('/dashboard/overview');
-}
+};
+export default Index;

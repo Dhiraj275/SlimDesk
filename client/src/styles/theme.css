@@ -5,29 +5,38 @@
 @import './themes/vercel.css';
 @import './themes/mono.css';
 @import './themes/notebook.css';
-@import './themes/light-green.css';
-@import './themes/zen.css';
-@import './themes/astro-vista.css';
-@import './themes/whatsapp.css';
+@import './themes/aurora.css';
 
 body {
   @apply overscroll-none;
+  font-family: var(--font-sans);
 }
 
 :root {
   --header-height: calc(var(--spacing, 0.25rem) * 12 + 1px);
 }
 
-/* Apply theme fonts to body for all themes */
-/* This ensures theme-specific fonts override Next.js font variables */
-/* Font variables are defined on [data-theme] (html element) */
-/* We need to override Next.js font variables on body to use html's values */
-/* Using initial removes the property, allowing parent (html) values to cascade */
-[data-theme] body {
-  /* Remove Next.js font variables to allow theme variables from html to cascade */
-  --font-sans: initial;
-  --font-mono: initial;
-  --font-serif: initial;
-  /* Apply font-family - will now resolve from html's [data-theme] variables */
-  font-family: var(--font-sans);
+/* Headings use theme's heading font, falling back to Manrope */
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: var(--font-heading, 'Manrope', var(--font-sans), sans-serif) !important;
+}
+
+/* Aurora theme specific font enforcement */
+[data-theme='aurora'] {
+  --font-sans: 'Manrope', var(--font-manrope), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Manrope', var(--font-manrope), sans-serif;
+}
+
+[data-theme='aurora'] body {
+  font-family: 'Manrope', var(--font-manrope), -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+[data-theme='aurora'] h1,
+[data-theme='aurora'] h2,
+[data-theme='aurora'] h3,
+[data-theme='aurora'] h4,
+[data-theme='aurora'] h5,
+[data-theme='aurora'] h6,
+[data-theme='aurora'] .font-heading {
+  font-family: 'Manrope', var(--font-manrope), sans-serif !important;
 }

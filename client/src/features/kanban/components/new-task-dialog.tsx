@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,11 +8,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
   DialogTrigger
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+} from '@/shared/components/ui/dialog';
+import { Input } from '@/shared/components/ui/input';
+import { Textarea } from '@/shared/components/ui/textarea';
+
 import { useTaskStore } from '../utils/store';
 
 export default function NewTaskDialog() {
@@ -31,17 +31,30 @@ export default function NewTaskDialog() {
 
   return (
     <Dialog>
-      <DialogTrigger render={<Button variant='secondary' size='sm' />}>
-        + Add New Task
+      <DialogTrigger asChild>
+        <Button variant='secondary' size='sm'>
+          ＋ Add New Todo
+        </Button>
       </DialogTrigger>
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
-          <DialogTitle>Add New Task</DialogTitle>
-          <DialogDescription>What do you want to get done today?</DialogDescription>
+          <DialogTitle>Add New Todo</DialogTitle>
+          <DialogDescription>
+            What do you want to get done today?
+          </DialogDescription>
         </DialogHeader>
-        <form id='task-form' className='grid gap-4 py-4' onSubmit={handleSubmit}>
+        <form
+          id='todo-form'
+          className='grid gap-4 py-4'
+          onSubmit={handleSubmit}
+        >
           <div className='grid grid-cols-4 items-center gap-4'>
-            <Input id='title' name='title' placeholder='Task title...' className='col-span-4' />
+            <Input
+              id='title'
+              name='title'
+              placeholder='Todo title...'
+              className='col-span-4'
+            />
           </div>
           <div className='grid grid-cols-4 items-center gap-4'>
             <Textarea
@@ -53,9 +66,11 @@ export default function NewTaskDialog() {
           </div>
         </form>
         <DialogFooter>
-          <DialogClose render={<Button type='submit' size='sm' form='task-form' />}>
-            Add Task
-          </DialogClose>
+          <DialogTrigger asChild>
+            <Button type='submit' size='sm' form='todo-form'>
+              Add Todo
+            </Button>
+          </DialogTrigger>
         </DialogFooter>
       </DialogContent>
     </Dialog>

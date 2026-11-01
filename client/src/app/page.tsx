@@ -1,5 +1,14 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-export default async function Page() {
-  redirect('/dashboard/overview');
+import { useAuth } from '@/features/auth/providers/auth-provider';
+import { redirect } from 'next/navigation';
+import LandingPage from '@/features/landing/components/landing-page';
+
+export default function Page() {
+  // const { isAuthenticated, isLoading } = useAuth();
+
+  // if (isLoading) return null;
+  // if (isAuthenticated) redirect('/dashboard/overview');
+
+  return <LandingPage />;
 }

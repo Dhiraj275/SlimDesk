@@ -1,24 +1,30 @@
 'use client';
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Icons } from '@/components/icons';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle
+} from '@/shared/components/ui/alert';
+import { Button } from '@/shared/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/shared/components/ui/card';
+import { IconAlertCircle } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useTransition } from 'react';
+import * as Sentry from '@sentry/nextjs';
 
 interface StatsErrorProps {
   error: Error;
-  reset: () => void;
+  reset: () => void; // Add reset function from error boundary
 }
 export default function StatsError({ error, reset }: StatsErrorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    console.error(error);
+    Sentry.captureException(error);
   }, [error]);
 
+  // the reload fn ensures the refresh is deffered  until the next render phase allowing react to handle any pending states before processing
   const reload = () => {
     startTransition(() => {
       router.refresh();
@@ -30,7 +36,7 @@ export default function StatsError({ error, reset }: StatsErrorProps) {
       <CardHeader className='flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row'>
         <div className='flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6'>
           <Alert variant='destructive' className='border-none'>
-            <Icons.alertCircle className='h-4 w-4' />
+            <IconAlertCircle className='h-4 w-4' />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription className='mt-2'>
               Failed to load statistics: {error.message}
