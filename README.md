@@ -5,6 +5,8 @@ The fast, lightweight CRM built for freelancers and modern agencies. Capture lea
 > [!WARNING]
 > **Work in Progress**: SlimDesk is actively under development. Features and APIs are subject to rapid change.
 
+![SlimDesk Preview](./assets/preview.png)
+
 ---
 
 ## Features
