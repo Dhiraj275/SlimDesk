@@ -2,6 +2,9 @@
 
 The fast, lightweight CRM built for freelancers and modern agencies. Capture leads, track pipelines, and close deals without the enterprise bloat.
 
+> [!WARNING]
+> **Work in Progress**: SlimDesk is actively under development. Features and APIs are subject to rapid change.
+
 ---
 
 ## Features
