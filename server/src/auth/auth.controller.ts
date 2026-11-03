@@ -3,9 +3,11 @@ import {
   Post,
   Get,
   Body,
+  Req,
   UseGuards,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +18,7 @@ import {
 import { AuthService } from './auth.service.js';
 import { SignupDto } from './dto/signup.dto.js';
 import { SigninDto } from './dto/signin.dto.js';
+import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { AuthResponseDto } from './dto/auth-response.dto.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
@@ -29,7 +32,7 @@ export class AuthController {
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a new user account' })
-  @ApiResponse({ status: 201, description: 'User registered successfully and JWT returned' })
+  @ApiResponse({ status: 201, description: 'User registered successfully and tokens returned' })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   @ApiResponse({ status: 409, description: 'Email address already exists' })
   async signup(@Body() signupDto: SignupDto): Promise<AuthResponseDto> {
@@ -47,7 +50,7 @@ export class AuthController {
   @Post('signin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log in with email and password' })
-  @ApiResponse({ status: 200, description: 'Logged in successfully and JWT returned' })
+  @ApiResponse({ status: 200, description: 'Logged in successfully and tokens returned' })
   @ApiResponse({ status: 401, description: 'Invalid email or password' })
   async signin(@Body() signinDto: SigninDto): Promise<AuthResponseDto> {
     return this.authService.signin(signinDto);
@@ -59,6 +62,41 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Logged in successfully' })
   async login(@Body() signinDto: SigninDto): Promise<AuthResponseDto> {
     return this.authService.signin(signinDto);
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh access token using a valid refresh token' })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  async refresh(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Req() req: any,
+  ): Promise<AuthResponseDto> {
+    const authHeader = req.headers?.authorization;
+    const token =
+      refreshTokenDto?.refreshToken ||
+      refreshTokenDto?.token ||
+      (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined) ||
+      (req.headers?.['x-refresh-token'] as string);
+
+    if (!token) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+
+    return this.authService.refreshToken(token);
+  }
+
+  @Post('refresh-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh token alias for compatibility' })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  async refreshTokenAlias(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Req() req: any,
+  ): Promise<AuthResponseDto> {
+    return this.refresh(refreshTokenDto, req);
   }
 
   @UseGuards(JwtAuthGuard)

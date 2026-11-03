@@ -12,6 +12,7 @@ export interface JwtPayload {
   role: Role;
   iat?: number;
   exp?: number;
+  tokenType?: 'access' | 'refresh';
 }
 
 @Injectable()
@@ -31,6 +32,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload): Promise<User> {
+    if (payload.tokenType && payload.tokenType !== 'access') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
     try {
       return await this.usersService.findById(payload.sub);
     } catch {

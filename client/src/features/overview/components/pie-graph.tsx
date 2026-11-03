@@ -20,11 +20,11 @@ import {
 } from '@/shared/components/ui/chart';
 
 const chartData = [
-  { browser: 'chrome', visitors: 275, fill: 'var(--primary)' },
-  { browser: 'safari', visitors: 200, fill: 'var(--primary-light)' },
-  { browser: 'firefox', visitors: 287, fill: 'var(--primary-lighter)' },
-  { browser: 'edge', visitors: 173, fill: 'var(--primary-dark)' },
-  { browser: 'other', visitors: 190, fill: 'var(--primary-darker)' }
+  { browser: 'chrome', visitors: 275, fill: 'var(--color-chrome)' },
+  { browser: 'safari', visitors: 200, fill: 'var(--color-safari)' },
+  { browser: 'firefox', visitors: 287, fill: 'var(--color-firefox)' },
+  { browser: 'edge', visitors: 173, fill: 'var(--color-edge)' },
+  { browser: 'other', visitors: 190, fill: 'var(--color-other)' }
 ];
 
 const chartConfig = {
@@ -33,23 +33,23 @@ const chartConfig = {
   },
   chrome: {
     label: 'Chrome',
-    color: 'var(--primary)'
+    color: 'var(--chart-1)'
   },
   safari: {
     label: 'Safari',
-    color: 'var(--primary)'
+    color: 'var(--chart-2)'
   },
   firefox: {
     label: 'Firefox',
-    color: 'var(--primary)'
+    color: 'var(--chart-3)'
   },
   edge: {
     label: 'Edge',
-    color: 'var(--primary)'
+    color: 'var(--chart-4)'
   },
   other: {
     label: 'Other',
-    color: 'var(--primary)'
+    color: 'var(--chart-5)'
   }
 } satisfies ChartConfig;
 
@@ -76,29 +76,33 @@ export function PieGraph() {
         >
           <PieChart>
             <defs>
-              {['chrome', 'safari', 'firefox', 'edge', 'other'].map(
-                (browser, index) => (
-                  <linearGradient
-                    key={browser}
-                    id={`fill${browser}`}
-                    x1='0'
-                    y1='0'
-                    x2='0'
-                    y2='1'
-                  >
-                    <stop
-                      offset='0%'
-                      stopColor='var(--primary)'
-                      stopOpacity={1 - index * 0.15}
-                    />
-                    <stop
-                      offset='100%'
-                      stopColor='var(--primary)'
-                      stopOpacity={0.8 - index * 0.15}
-                    />
-                  </linearGradient>
-                )
-              )}
+              {[
+                { browser: 'chrome', color: 'var(--color-chrome)' },
+                { browser: 'safari', color: 'var(--color-safari)' },
+                { browser: 'firefox', color: 'var(--color-firefox)' },
+                { browser: 'edge', color: 'var(--color-edge)' },
+                { browser: 'other', color: 'var(--color-other)' }
+              ].map(({ browser, color }) => (
+                <linearGradient
+                  key={browser}
+                  id={`fill${browser}`}
+                  x1='0'
+                  y1='0'
+                  x2='0'
+                  y2='1'
+                >
+                  <stop
+                    offset='0%'
+                    stopColor={color}
+                    stopOpacity={1.0}
+                  />
+                  <stop
+                    offset='100%'
+                    stopColor={color}
+                    stopOpacity={0.6}
+                  />
+                </linearGradient>
+              ))}
             </defs>
             <ChartTooltip
               cursor={false}

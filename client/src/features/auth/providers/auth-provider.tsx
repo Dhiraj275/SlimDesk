@@ -43,7 +43,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const restoreSession = async () => {
       try {
         const token = tokenManager.getAccessToken();
-        if (!token) {
+        const refreshToken = tokenManager.getRefreshToken();
+
+        if (!token && !refreshToken) {
           if (isMounted) {
             setUser(null);
             setIsLoading(false);
@@ -51,13 +53,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        // If access token is expired, attempt to refresh using the refresh token
         if (tokenManager.isAccessTokenExpired()) {
-          tokenManager.clearTokens();
-          if (isMounted) {
-            setUser(null);
-            setIsLoading(false);
+          if (refreshToken) {
+            const refreshedToken = await tokenManager.refreshAccessToken();
+            if (!refreshedToken) {
+              if (isMounted) {
+                setUser(null);
+                setIsLoading(false);
+              }
+              return;
+            }
+          } else {
+            tokenManager.clearTokens();
+            if (isMounted) {
+              setUser(null);
+              setIsLoading(false);
+            }
+            return;
           }
-          return;
         }
 
         const profile = await api.get<{
@@ -84,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           setUser(mappedUser);
         }
-      } catch (err) {
+      } catch {
         tokenManager.clearTokens();
         if (isMounted) {
           setUser(null);
@@ -98,8 +112,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     restoreSession();
 
+    const handleSessionExpired = () => {
+      if (isMounted) {
+        setUser(null);
+        setIsLoading(false);
+      }
+    };
+
+    window.addEventListener('auth:session-expired', handleSessionExpired);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('auth:session-expired', handleSessionExpired);
     };
   }, []);
 
@@ -115,13 +139,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authResult.data?.token ||
         authResult.data?.accessToken;
 
+      const refreshToken =
+        authResult.refreshToken ||
+        authResult.data?.refreshToken;
+
       if (!token) {
         throw new Error('Authentication token missing from response');
       }
 
       tokenManager.setTokens({
         accessToken: token,
-        refreshToken: token
+        refreshToken: refreshToken || token
       });
 
       let profile: any = null;
@@ -137,16 +165,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role?: string;
         }>('/auth/me');
       } catch {
-        // Fallback if needed
+        // Fallback to response payload if /auth/me fails
       }
 
+      const userSource = profile || authResult.user || authResult.data?.user;
+
       const mappedUser: User = {
-        userId: profile?.userId || profile?._id || 'user',
-        displayName: profile?.displayName || profile?.fullName || profile?.name || 'User',
-        name: profile?.displayName || profile?.fullName || profile?.name || 'User',
-        email: profile?.email || '',
-        createdAt: profile?.createdAt,
-        role: profile?.role || 'user',
+        userId: userSource?.userId || userSource?._id || 'user',
+        displayName: userSource?.displayName || userSource?.fullName || userSource?.name || 'User',
+        name: userSource?.displayName || userSource?.fullName || userSource?.name || 'User',
+        email: userSource?.email || '',
+        createdAt: userSource?.createdAt,
+        role: userSource?.role || 'user',
         isAuthenticated: true
       };
 

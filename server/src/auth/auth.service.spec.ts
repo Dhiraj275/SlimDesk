@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcrypt';
 import { AuthService } from './auth.service.js';
 import { UsersService } from '../users/users.service.js';
@@ -11,6 +12,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let mockUsersService: any;
   let mockJwtService: any;
+  let mockConfigService: any;
 
   const mockUser: User = {
     userId: 'uuid-123',
@@ -30,6 +32,17 @@ describe('AuthService', () => {
 
     mockJwtService = {
       sign: vi.fn().mockReturnValue('mock.jwt.token'),
+      verify: vi.fn(),
+    };
+
+    mockConfigService = {
+      get: vi.fn().mockImplementation((key: string, defaultValue?: any) => {
+        if (key === 'JWT_SECRET') return 'mock_secret';
+        if (key === 'JWT_EXPIRES_IN') return '15m';
+        if (key === 'JWT_REFRESH_SECRET') return 'mock_refresh_secret';
+        if (key === 'JWT_REFRESH_EXPIRES_IN') return '7d';
+        return defaultValue;
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -43,6 +56,10 @@ describe('AuthService', () => {
           provide: JwtService,
           useValue: mockJwtService,
         },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
       ],
     }).compile();
 
@@ -54,7 +71,7 @@ describe('AuthService', () => {
   });
 
   describe('signup', () => {
-    it('should create a user and return an auth token', async () => {
+    it('should create a user and return an auth token pair', async () => {
       mockUsersService.create.mockResolvedValue(mockUser);
 
       const result = await service.signup({
@@ -68,12 +85,8 @@ describe('AuthService', () => {
         email: 'test@example.com',
         password: 'password123',
       });
-      expect(mockJwtService.sign).toHaveBeenCalledWith({
-        sub: 'uuid-123',
-        email: 'test@example.com',
-        role: Role.USER,
-      });
       expect(result.accessToken).toBe('mock.jwt.token');
+      expect(result.refreshToken).toBe('mock.jwt.token');
       expect(result.data.token).toBe('mock.jwt.token');
     });
   });
@@ -93,6 +106,7 @@ describe('AuthService', () => {
       });
 
       expect(result.accessToken).toBe('mock.jwt.token');
+      expect(result.refreshToken).toBe('mock.jwt.token');
       expect(result.data.token).toBe('mock.jwt.token');
     });
 
@@ -119,6 +133,32 @@ describe('AuthService', () => {
           email: 'test@example.com',
           password: 'wrongPassword',
         }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should refresh tokens when valid refresh token is passed', async () => {
+      mockJwtService.verify.mockReturnValue({ sub: 'uuid-123' });
+      mockUsersService.findById.mockResolvedValue(mockUser);
+
+      const result = await service.refreshToken('valid.refresh.token');
+
+      expect(mockJwtService.verify).toHaveBeenCalledWith('valid.refresh.token', {
+        secret: 'mock_refresh_secret',
+      });
+      expect(mockUsersService.findById).toHaveBeenCalledWith('uuid-123');
+      expect(result.accessToken).toBe('mock.jwt.token');
+      expect(result.refreshToken).toBe('mock.jwt.token');
+    });
+
+    it('should throw UnauthorizedException on invalid token', async () => {
+      mockJwtService.verify.mockImplementation(() => {
+        throw new Error('invalid token');
+      });
+
+      await expect(
+        service.refreshToken('invalid.token'),
       ).rejects.toThrow(UnauthorizedException);
     });
   });

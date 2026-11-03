@@ -9,15 +9,19 @@ export type TokenPair = {
 
 type JwtPayload = {
   exp?: number;
+  sub?: string;
+  email?: string;
+  tokenType?: string;
   [key: string]: any;
 };
 
 /* =========================
-   CONSTANTS
+   CONSTANTS & CONFIG
 ========================= */
 
 const ACCESS_TOKEN_KEY = 'auth.accessToken';
 const REFRESH_TOKEN_KEY = 'auth.refreshToken';
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:3001';
 
 /* =========================
    HELPERS
@@ -54,6 +58,8 @@ const isExpired = (token: string, bufferSeconds = 30): boolean => {
 ========================= */
 
 class TokenManager {
+  private refreshPromise: Promise<string | null> | null = null;
+
   /* ---------- GET ---------- */
 
   getAccessToken(): string | null {
@@ -70,7 +76,9 @@ class TokenManager {
 
   setTokens(tokens: TokenPair): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+    if (tokens.accessToken) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+    }
 
     if (tokens.refreshToken) {
       localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
@@ -85,21 +93,104 @@ class TokenManager {
     localStorage.removeItem(REFRESH_TOKEN_KEY);
   }
 
-  /* ---------- CHECK ---------- */
+  /* ---------- CHECK EXPIRY ---------- */
 
-  isAccessTokenExpired(): boolean {
+  isAccessTokenExpired(bufferSeconds = 30): boolean {
     const token = this.getAccessToken();
     if (!token) return true;
-    return isExpired(token);
+    return isExpired(token, bufferSeconds);
   }
 
-  /* ---------- REFRESH ---------- */
+  isRefreshTokenExpired(bufferSeconds = 30): boolean {
+    const token = this.getRefreshToken();
+    if (!token) return true;
+    return isExpired(token, bufferSeconds);
+  }
+
+  /* ---------- NOTIFY ---------- */
+
+  private notifySessionExpired(): void {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('auth:session-expired'));
+    }
+  }
+
+  private notifyTokenRefreshed(newAccessToken: string): void {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('auth:token-refreshed', {
+          detail: { accessToken: newAccessToken }
+        })
+      );
+    }
+  }
+
+  /* ---------- REFRESH ACCESS TOKEN (DEDUPLICATED) ---------- */
 
   async refreshAccessToken(): Promise<string | null> {
-    // Current backend JWTs are long-lived; refresh-token endpoint is not required.
-    // If expired, clear tokens so user re-authenticates.
-    this.clearTokens();
-    return null;
+    if (typeof window === 'undefined') return null;
+
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    this.refreshPromise = this.executeRefresh().finally(() => {
+      this.refreshPromise = null;
+    });
+
+    return this.refreshPromise;
+  }
+
+  private async executeRefresh(): Promise<string | null> {
+    const refreshToken = this.getRefreshToken();
+
+    if (!refreshToken || this.isRefreshTokenExpired()) {
+      this.clearTokens();
+      this.notifySessionExpired();
+      return null;
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ refreshToken })
+      });
+
+      if (!response.ok) {
+        // If server explicitly rejected the refresh token (401 / 400), session is invalid
+        if (response.status === 401 || response.status === 400) {
+          this.clearTokens();
+          this.notifySessionExpired();
+        }
+        return null;
+      }
+
+      const data = await response.json();
+      const newAccessToken: string | undefined =
+        data.accessToken || data.token || data.data?.accessToken || data.data?.token;
+      const newRefreshToken: string | undefined =
+        data.refreshToken || data.data?.refreshToken || refreshToken;
+
+      if (!newAccessToken) {
+        this.clearTokens();
+        this.notifySessionExpired();
+        return null;
+      }
+
+      this.setTokens({
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken
+      });
+
+      this.notifyTokenRefreshed(newAccessToken);
+      return newAccessToken;
+    } catch {
+      // Temporary network or connection failure: do not clear tokens prematurely
+      return null;
+    }
   }
 }
 

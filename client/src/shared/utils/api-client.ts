@@ -14,16 +14,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:3001'
 type ApiOptions = RequestInit & {
   skipAuth?: boolean;
   retry?: boolean;
-  token?: string; // allow server injection
-};
-
-/* ============================
-   TOKEN HELPERS (CLIENT ONLY)
-============================ */
-
-const getClientToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('auth.accessToken');
+  token?: string; // allow server injection or manual override
 };
 
 /* ============================
@@ -40,6 +31,20 @@ async function request<T>(
 
   const isFormData = options.body instanceof FormData;
 
+  /* ============================
+     PROACTIVE TOKEN REFRESH
+  ============================ */
+
+  if (
+    typeof window !== 'undefined' &&
+    !options.skipAuth &&
+    !options.token &&
+    tokenManager.getRefreshToken() &&
+    tokenManager.isAccessTokenExpired()
+  ) {
+    await tokenManager.refreshAccessToken();
+  }
+
   const headers: Record<string, string> = {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string>)
@@ -52,20 +57,25 @@ async function request<T>(
   let token: string | null | undefined = options.token;
 
   if (!token && !options.skipAuth) {
-    token = getClientToken();
+    token = tokenManager.getAccessToken();
   }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let response = await fetch(url, {
-    ...options,
-    headers
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers
+    });
+  } catch (err) {
+    throw err;
+  }
 
   /* ============================
-     HANDLE 401 (CLIENT ONLY)
+     HANDLE 401 RETRY (CLIENT ONLY)
   ============================ */
 
   if (
@@ -74,11 +84,21 @@ async function request<T>(
     !options.skipAuth &&
     !options.retry
   ) {
-    const refreshed = await tokenManager.refreshAccessToken();
+    const refreshedToken = await tokenManager.refreshAccessToken();
 
-    if (refreshed) {
+    if (refreshedToken) {
+      const retryHeaders: Record<string, string> = {
+        ...(options.headers as Record<string, string>),
+        Authorization: `Bearer ${refreshedToken}`
+      };
+      if (!isFormData) {
+        retryHeaders['Content-Type'] = 'application/json';
+      }
+
       return request<T>(endpoint, {
         ...options,
+        token: refreshedToken,
+        headers: retryHeaders,
         retry: true
       });
     }
@@ -93,7 +113,7 @@ async function request<T>(
 
     try {
       payload = await response.json();
-    } catch { }
+    } catch {}
 
     throw new ApiError(
       response.status,

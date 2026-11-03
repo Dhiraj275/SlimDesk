@@ -8,10 +8,12 @@ export interface AuthUserPayload {
 export interface AuthResponse {
   accessToken: string;
   token: string;
+  refreshToken?: string;
   user: AuthUserPayload;
   data?: {
     token: string;
     accessToken: string;
+    refreshToken?: string;
     user: AuthUserPayload;
   };
 }

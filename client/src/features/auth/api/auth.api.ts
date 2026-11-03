@@ -20,6 +20,14 @@ export const registerUser = async ({
   });
 };
 
+export const refreshTokensApi = async (refreshToken: string): Promise<AuthResponse> => {
+  return await api.post<AuthResponse>(
+    '/auth/refresh',
+    { refreshToken },
+    { skipAuth: true }
+  );
+};
+
 export const getCurrentUser = async () => {
   return await api.get<{
     userId: string;

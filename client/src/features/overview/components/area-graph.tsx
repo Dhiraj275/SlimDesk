@@ -33,11 +33,11 @@ const chartConfig = {
   },
   desktop: {
     label: 'Desktop',
-    color: 'var(--primary)'
+    color: 'var(--chart-1)'
   },
   mobile: {
     label: 'Mobile',
-    color: 'var(--primary)'
+    color: 'var(--chart-2)'
   }
 } satisfies ChartConfig;
 
@@ -67,7 +67,7 @@ export function AreaGraph() {
                 <stop
                   offset='5%'
                   stopColor='var(--color-desktop)'
-                  stopOpacity={1.0}
+                  stopOpacity={0.8}
                 />
                 <stop
                   offset='95%'

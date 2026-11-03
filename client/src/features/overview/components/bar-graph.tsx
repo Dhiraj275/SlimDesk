@@ -119,15 +119,15 @@ const chartConfig = {
   },
   desktop: {
     label: 'Desktop',
-    color: 'var(--primary)'
+    color: 'var(--chart-1)'
   },
   mobile: {
     label: 'Mobile',
-    color: 'var(--primary)'
+    color: 'var(--chart-2)'
   },
   error: {
     label: 'Error',
-    color: 'var(--primary)'
+    color: 'var(--chart-5)'
   }
 } satisfies ChartConfig;
 
@@ -209,12 +209,12 @@ export function BarGraph() {
               <linearGradient id='fillBar' x1='0' y1='0' x2='0' y2='1'>
                 <stop
                   offset='0%'
-                  stopColor='var(--primary)'
+                  stopColor={`var(--color-${activeChart})`}
                   stopOpacity={0.8}
                 />
                 <stop
                   offset='100%'
-                  stopColor='var(--primary)'
+                  stopColor={`var(--color-${activeChart})`}
                   stopOpacity={0.2}
                 />
               </linearGradient>
@@ -235,7 +235,7 @@ export function BarGraph() {
               }}
             />
             <ChartTooltip
-              cursor={{ fill: 'var(--primary)', opacity: 0.1 }}
+              cursor={{ fill: 'var(--chart-1)', opacity: 0.1 }}
               content={
                 <ChartTooltipContent
                   className='w-[150px]'
