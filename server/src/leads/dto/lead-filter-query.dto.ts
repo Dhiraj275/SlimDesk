@@ -10,6 +10,9 @@ export class LeadFilterQueryDto {
     description: 'Search string matching title, name, email, company, or interested service',
   })
   @IsOptional()
+  @Transform(({ value }) =>
+    value === 'undefined' || value === 'null' || value === '' ? undefined : value
+  )
   @IsString()
   search?: string;
 
@@ -18,6 +21,9 @@ export class LeadFilterQueryDto {
     description: 'Filter leads by specific pipeline status',
   })
   @IsOptional()
+  @Transform(({ value }) =>
+    value === 'all' || value === 'undefined' || value === 'null' || value === '' ? undefined : value
+  )
   @IsEnum(LeadStatus)
   status?: LeadStatus;
 
@@ -26,6 +32,9 @@ export class LeadFilterQueryDto {
     description: 'Filter leads by acquisition source',
   })
   @IsOptional()
+  @Transform(({ value }) =>
+    value === 'all' || value === 'undefined' || value === 'null' || value === '' ? undefined : value
+  )
   @IsEnum(LeadSource)
   source?: LeadSource;
 
@@ -54,6 +63,19 @@ export class LeadFilterQueryDto {
   })
   @IsBoolean()
   overdueOnly?: boolean;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Alias for overdueOnly: filter leads with overdue follow-ups',
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true || value === 1 || value === '1') return true;
+    if (value === 'false' || value === false || value === 0 || value === '0') return false;
+    return value;
+  })
+  @IsBoolean()
+  overdueFollowUp?: boolean;
 
   @ApiPropertyOptional({
     example: 50,

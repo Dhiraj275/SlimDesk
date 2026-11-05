@@ -141,7 +141,7 @@ export function LeadListView({
                         className={cn(
                           'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium',
                           isOverdue
-                            ? 'bg-destructive/10 text-destructive'
+                            ? 'border border-rose-500/25 bg-rose-500/10 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300'
                             : 'bg-muted/50 text-muted-foreground'
                         )}
                       >

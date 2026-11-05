@@ -487,7 +487,10 @@ export function LeadDetailsView({
                             })}
                           </span>
                           {new Date(item.dueDate) <= new Date() && (
-                            <Badge variant='destructive' className='text-[10px] px-1.5 py-0'>
+                            <Badge
+                              variant='outline'
+                              className='border-rose-500/30 bg-rose-500/10 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 rounded-full text-[10px] px-2 py-0 font-medium'
+                            >
                               Due
                             </Badge>
                           )}

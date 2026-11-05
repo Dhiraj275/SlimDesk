@@ -1,4 +1,5 @@
 import {
+  IconAddressBook,
   IconAlertTriangle,
   IconArrowRight,
   IconBox,
@@ -80,5 +81,6 @@ export const Icons = {
   profile: IconUser,
   users: IconUsers,
   leads: IconUsers,
+  contacts: IconAddressBook,
   notification: IconNotification
 };

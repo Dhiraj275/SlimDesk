@@ -151,7 +151,7 @@ export function LeadCard({
               className={cn(
                 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium',
                 isOverdue
-                  ? 'bg-destructive/10 text-destructive'
+                  ? 'border border-rose-500/25 bg-rose-500/10 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300'
                   : 'bg-muted/50 text-muted-foreground'
               )}
             >

@@ -30,6 +30,7 @@ export class ContactsService {
     }
     return this.contactsRepository.find({
       where,
+      relations: { leads: true },
       order: { createdAt: 'DESC' },
     });
   }
@@ -37,6 +38,7 @@ export class ContactsService {
   async findById(userId: string, contactId: string): Promise<Contact> {
     const contact = await this.contactsRepository.findOne({
       where: { contactId, userId },
+      relations: { leads: true },
     });
 
     if (!contact) {

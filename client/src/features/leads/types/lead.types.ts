@@ -108,7 +108,9 @@ export interface LeadFilterQuery {
   status?: LeadStatus;
   source?: LeadSource;
   isQualified?: boolean;
+  overdueOnly?: boolean;
   overdueFollowUp?: boolean;
+  offset?: number;
   page?: number;
   limit?: number;
 }

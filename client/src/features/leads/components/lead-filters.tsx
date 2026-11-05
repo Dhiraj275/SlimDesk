@@ -152,11 +152,13 @@ export function LeadFilters({
           <Button
             type='button'
             size='sm'
-            variant={overdueOnly ? 'destructive' : 'outline'}
+            variant='outline'
             onClick={onOverdueToggle}
             className={cn(
-              'h-9 text-xs gap-1.5',
-              !overdueOnly && 'text-muted-foreground hover:text-foreground'
+              'h-9 text-xs gap-1.5 transition-colors',
+              overdueOnly
+                ? 'border-rose-500/30 bg-rose-500/15 text-rose-700 dark:border-rose-500/35 dark:bg-rose-500/20 dark:text-rose-300 hover:bg-rose-500/25'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <IconCalendarExclamation className='h-3.5 w-3.5' />

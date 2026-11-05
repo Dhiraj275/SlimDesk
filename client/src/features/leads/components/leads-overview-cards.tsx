@@ -53,20 +53,23 @@ export function LeadsOverviewCards({
       description: 'Due today or overdue',
       badge:
         (metrics?.followUpsDueCount ?? 0) > 0 ? (
-          <Badge variant='destructive' className='text-xs font-medium'>
+          <Badge
+            variant='outline'
+            className='border-rose-500/30 bg-rose-500/10 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 text-[11px] font-medium rounded-full px-2.5 py-0.5'
+          >
             Action needed
           </Badge>
         ) : (
           <Badge
             variant='outline'
-            className='border-emerald-500/30 text-emerald-600 text-xs font-medium'
+            className='border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300 text-[11px] font-medium rounded-full px-2.5 py-0.5'
           >
             Up to date
           </Badge>
         ),
       color:
         (metrics?.followUpsDueCount ?? 0) > 0
-          ? 'text-destructive'
+          ? 'text-rose-600 dark:text-rose-400'
           : 'text-foreground',
     },
     {

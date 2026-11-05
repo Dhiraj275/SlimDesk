@@ -138,11 +138,17 @@ export const api = {
     let url = endpoint;
 
     if (params) {
-      const query = new URLSearchParams(
-        Object.entries(params).map(([k, v]) => [k, String(v)])
-      ).toString();
+      const cleanEntries = Object.entries(params).filter(
+        ([_, v]) => v !== undefined && v !== null && v !== '' && v !== 'all'
+      );
 
-      if (query) url += `?${query}`;
+      if (cleanEntries.length > 0) {
+        const query = new URLSearchParams(
+          cleanEntries.map(([k, v]) => [k, String(v)])
+        ).toString();
+
+        if (query) url += (url.includes('?') ? '&' : '?') + query;
+      }
     }
 
     return request<T>(url, { method: 'GET', ...options });

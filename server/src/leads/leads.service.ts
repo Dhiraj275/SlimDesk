@@ -146,7 +146,8 @@ export class LeadsService {
       });
     }
 
-    if (query.overdueOnly) {
+    const isOverdue = query.overdueOnly ?? query.overdueFollowUp;
+    if (isOverdue) {
       qb.andWhere(
         'lead.nextFollowUpDate IS NOT NULL AND lead.nextFollowUpDate < CURRENT_TIMESTAMP AND lead.status NOT IN (:...terminalStatuses)',
         {

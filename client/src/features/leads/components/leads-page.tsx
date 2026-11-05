@@ -41,8 +41,8 @@ export function LeadsPage() {
         leadsApi.getMetrics(),
         leadsApi.getLeads({
           search: search.trim() || undefined,
-          source: sourceFilter !== 'all' ? (sourceFilter as LeadSource) : undefined,
-          overdueFollowUp: overdueOnly ? true : undefined,
+          source: sourceFilter !== 'all' && sourceFilter ? (sourceFilter as LeadSource) : undefined,
+          overdueOnly: overdueOnly ? true : undefined,
           limit: 100,
         }),
       ]);

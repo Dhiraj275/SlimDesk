@@ -22,6 +22,14 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
+    title: 'Contacts',
+    url: '/dashboard/contacts',
+    icon: 'contacts',
+    isActive: false,
+    shortcut: ['c', 't'],
+    items: []
+  },
+  {
     title: 'Kanban',
     url: '/dashboard/kanban',
     icon: 'kanban',

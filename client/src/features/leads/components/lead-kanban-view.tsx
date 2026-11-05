@@ -71,7 +71,7 @@ export function LeadKanbanView({
                 className={cn(
                   'flex w-72 shrink-0 flex-col rounded-xl border border-border/50 bg-card/90 p-3 shadow-2xs transition-colors',
                   col.status === LeadStatus.CONVERTED && 'border-emerald-500/30 bg-emerald-500/5',
-                  col.status === LeadStatus.LOST && 'border-destructive/30 bg-destructive/5'
+                  col.status === LeadStatus.LOST && 'border-rose-500/25 bg-rose-500/5'
                 )}
               >
                 {/* Column Header */}
@@ -83,7 +83,7 @@ export function LeadKanbanView({
                       </div>
                     )}
                     {col.status === LeadStatus.LOST && (
-                      <div className='flex h-5 w-5 items-center justify-center rounded-full bg-destructive/20 text-destructive'>
+                      <div className='flex h-5 w-5 items-center justify-center rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400'>
                         <IconX className='h-3 w-3 stroke-[2.5]' />
                       </div>
                     )}

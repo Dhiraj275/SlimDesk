@@ -19,46 +19,53 @@ export const STATUS_CONFIG: Record<
   LeadStatus,
   {
     label: string;
-    variant: 'default' | 'secondary' | 'outline' | 'destructive';
     className: string;
+    dotColor: string;
     isTerminal?: boolean;
   }
 > = {
   [LeadStatus.NEW]: {
     label: 'New',
-    variant: 'secondary',
-    className: 'bg-muted text-muted-foreground border-border/50 hover:bg-muted',
+    className:
+      'border-slate-500/20 bg-slate-500/10 text-slate-700 dark:border-slate-400/25 dark:bg-slate-400/10 dark:text-slate-300 hover:bg-slate-500/15',
+    dotColor: 'bg-slate-500 dark:bg-slate-400',
   },
   [LeadStatus.CONTACTED]: {
     label: 'Contacted',
-    variant: 'outline',
-    className: 'border-sky-500/30 text-sky-600 dark:text-sky-400 bg-sky-500/10 hover:bg-sky-500/15',
+    className:
+      'border-sky-500/25 bg-sky-500/10 text-sky-700 dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-300 hover:bg-sky-500/15',
+    dotColor: 'bg-sky-500 dark:bg-sky-400',
   },
   [LeadStatus.QUALIFIED]: {
     label: 'Qualified',
-    variant: 'outline',
-    className: 'border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/15',
+    className:
+      'border-indigo-500/25 bg-indigo-500/10 text-indigo-700 dark:border-indigo-400/25 dark:bg-indigo-400/10 dark:text-indigo-300 hover:bg-indigo-500/15',
+    dotColor: 'bg-indigo-500 dark:bg-indigo-400',
   },
   [LeadStatus.PROPOSAL_SENT]: {
     label: 'Proposal Sent',
-    variant: 'outline',
-    className: 'border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/15',
+    className:
+      'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-300 hover:bg-amber-500/15',
+    dotColor: 'bg-amber-500 dark:bg-amber-400',
   },
   [LeadStatus.NEGOTIATION]: {
     label: 'Negotiation',
-    variant: 'outline',
-    className: 'border-purple-500/30 text-purple-600 dark:text-purple-400 bg-purple-500/10 hover:bg-purple-500/15',
+    className:
+      'border-purple-500/25 bg-purple-500/10 text-purple-700 dark:border-purple-400/25 dark:bg-purple-400/10 dark:text-purple-300 hover:bg-purple-500/15',
+    dotColor: 'bg-purple-500 dark:bg-purple-400',
   },
   [LeadStatus.CONVERTED]: {
     label: 'Converted',
-    variant: 'outline',
-    className: 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 font-semibold hover:bg-emerald-500/15',
+    className:
+      'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300 font-semibold hover:bg-emerald-500/15',
+    dotColor: 'bg-emerald-500 dark:bg-emerald-400',
     isTerminal: true,
   },
   [LeadStatus.LOST]: {
     label: 'Lost',
-    variant: 'destructive',
-    className: 'border-destructive/30 text-destructive bg-destructive/10 hover:bg-destructive/15',
+    className:
+      'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 hover:bg-rose-500/15',
+    dotColor: 'bg-rose-500 dark:bg-rose-400',
     isTerminal: true,
   },
 };
@@ -87,12 +94,21 @@ export function LeadStatusBadge({
 
   return (
     <Badge
-      variant={config.variant}
-      className={cn('text-xs px-2 py-0.5 font-medium tracking-tight whitespace-nowrap', config.className, className)}
+      variant='outline'
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-normal border shadow-2xs whitespace-nowrap transition-colors',
+        config.className,
+        className
+      )}
     >
-      {status === LeadStatus.CONVERTED && <IconCheck className='mr-1 h-3 w-3 stroke-[2.5]' />}
-      {status === LeadStatus.LOST && <IconX className='mr-1 h-3 w-3 stroke-[2.5]' />}
-      {config.label}
+      {status === LeadStatus.CONVERTED ? (
+        <IconCheck className='h-3 w-3 stroke-[2.5] text-emerald-600 dark:text-emerald-400 shrink-0' />
+      ) : status === LeadStatus.LOST ? (
+        <IconX className='h-3 w-3 stroke-[2.5] text-rose-600 dark:text-rose-400 shrink-0' />
+      ) : (
+        <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', config.dotColor)} />
+      )}
+      <span>{config.label}</span>
     </Badge>
   );
 }
@@ -109,11 +125,11 @@ export function LeadQualificationBadge({
       <Badge
         variant='outline'
         className={cn(
-          'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs px-2 py-0.5 font-medium',
+          'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300 shadow-2xs',
           className
         )}
       >
-        <IconCheck className='mr-1 h-3 w-3 stroke-[2.5]' />
+        <IconCheck className='h-3 w-3 stroke-[2.5] text-emerald-600 dark:text-emerald-400' />
         Qualified
       </Badge>
     );
@@ -123,7 +139,7 @@ export function LeadQualificationBadge({
     <Badge
       variant='outline'
       className={cn(
-        'border-border/50 bg-muted/50 text-muted-foreground text-xs px-2 py-0.5 font-normal',
+        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-normal border-border/60 bg-muted/40 text-muted-foreground shadow-2xs',
         className
       )}
     >

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -51,10 +51,18 @@ export function CreateLeadDialog({
   open,
   onOpenChange,
   onSuccess,
+  initialContact,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: (lead: Lead) => void;
+  initialContact?: {
+    contactId?: string;
+    name?: string;
+    email?: string | null;
+    phone?: string | null;
+    company?: string | null;
+  } | null;
 }) {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
@@ -69,6 +77,15 @@ export function CreateLeadDialog({
   const [description, setDescription] = useState('');
   const [nextFollowUpDate, setNextFollowUpDate] = useState('');
   const [followUpNotes, setFollowUpNotes] = useState('');
+
+  useEffect(() => {
+    if (initialContact && open) {
+      setName(initialContact.name || '');
+      setEmail(initialContact.email || '');
+      setPhone(initialContact.phone || '');
+      setCompany(initialContact.company || '');
+    }
+  }, [initialContact, open]);
 
   const resetForm = () => {
     setName('');
@@ -97,6 +114,7 @@ export function CreateLeadDialog({
       const payload: CreateLeadPayload = {
         name: name.trim(),
         title: title.trim() || undefined,
+        contactId: initialContact?.contactId || undefined,
         email: email.trim() || undefined,
         phone: phone.trim() || undefined,
         company: company.trim() || undefined,

@@ -11,6 +11,7 @@ import {
   IsDateString,
   IsUUID,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { LeadSource } from '../enums/lead-source.enum.js';
 
@@ -48,6 +49,7 @@ export class UpdateLeadDto {
 
   @ApiPropertyOptional({ enum: LeadSource, description: 'Updated acquisition source' })
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === 'undefined' || value === null ? undefined : value))
   @IsEnum(LeadSource)
   source?: LeadSource;
 

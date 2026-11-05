@@ -4,9 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
   Index,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Lead } from '../../leads/entities/lead.entity.js';
 
 @Entity('contacts')
 export class Contact {
@@ -73,4 +75,10 @@ export class Contact {
   })
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @ApiPropertyOptional({
+    description: 'Lead opportunities associated with this contact',
+  })
+  @OneToMany('Lead', (lead: Lead) => lead.contact)
+  leads?: Lead[];
 }
