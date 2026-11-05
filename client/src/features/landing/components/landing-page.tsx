@@ -114,7 +114,7 @@ function Hero() {
       {/* Aurora WebGL canvas & Noise texture overlay */}
       <div className='pointer-events-none absolute inset-0 -z-10 overflow-hidden'>
         <Aurora />
-        <NoiseOverlay opacity={0.065} />
+        <NoiseOverlay opacity={0.02} />
         {/* Smooth bottom vignette gradient fading into page background */}
         <div className='absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent pointer-events-none' />
       </div>

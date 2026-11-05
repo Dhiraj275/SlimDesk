@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
@@ -11,8 +13,15 @@ import {
 } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
-import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/shared/components/ui/form';
 import {
   Select,
   SelectContent,
@@ -22,6 +31,10 @@ import {
 } from '@/shared/components/ui/select';
 import { leadsApi } from '../api/leads.api';
 import { CreateLeadPayload, Lead, LeadSource } from '../types/lead.types';
+import {
+  createLeadSchema,
+  CreateLeadFormValues,
+} from '../schemas/lead.schema';
 import { SOURCE_CONFIG } from './lead-status-badge';
 import { toast } from 'sonner';
 import {
@@ -33,9 +46,7 @@ import {
   IconMail,
   IconPhone,
   IconBriefcase,
-  IconSparkles,
   IconCalendarEvent,
-  IconNotes,
 } from '@tabler/icons-react';
 
 const CURRENCIES = [
@@ -46,6 +57,21 @@ const CURRENCIES = [
   { code: 'CAD', symbol: '$', label: 'CAD ($)' },
   { code: 'AUD', symbol: '$', label: 'AUD ($)' },
 ];
+
+const DEFAULT_FORM_VALUES: CreateLeadFormValues = {
+  name: '',
+  title: '',
+  company: '',
+  email: '',
+  phone: '',
+  source: LeadSource.WEBSITE,
+  interestedService: '',
+  estimatedBudget: '',
+  currency: 'USD',
+  description: '',
+  nextFollowUpDate: '',
+  followUpNotes: '',
+};
 
 export function CreateLeadDialog({
   open,
@@ -65,71 +91,58 @@ export function CreateLeadDialog({
   } | null;
 }) {
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState('');
-  const [title, setTitle] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [company, setCompany] = useState('');
-  const [source, setSource] = useState<LeadSource>(LeadSource.WEBSITE);
-  const [interestedService, setInterestedService] = useState('');
-  const [estimatedBudget, setEstimatedBudget] = useState('');
-  const [currency, setCurrency] = useState('USD');
-  const [description, setDescription] = useState('');
-  const [nextFollowUpDate, setNextFollowUpDate] = useState('');
-  const [followUpNotes, setFollowUpNotes] = useState('');
+
+  const form = useForm<CreateLeadFormValues>({
+    resolver: zodResolver(createLeadSchema),
+    defaultValues: DEFAULT_FORM_VALUES,
+    mode: 'onTouched',
+  });
+
+  const currencyValue = form.watch('currency') || 'USD';
+  const selectedCurrencySymbol =
+    CURRENCIES.find((c) => c.code === currencyValue)?.symbol || '$';
 
   useEffect(() => {
-    if (initialContact && open) {
-      setName(initialContact.name || '');
-      setEmail(initialContact.email || '');
-      setPhone(initialContact.phone || '');
-      setCompany(initialContact.company || '');
+    if (open) {
+      form.reset({
+        ...DEFAULT_FORM_VALUES,
+        name: initialContact?.name || '',
+        company: initialContact?.company || '',
+        email: initialContact?.email || '',
+        phone: initialContact?.phone || '',
+      });
+    } else {
+      form.reset(DEFAULT_FORM_VALUES);
     }
-  }, [initialContact, open]);
+  }, [initialContact, open, form]);
 
-  const resetForm = () => {
-    setName('');
-    setTitle('');
-    setEmail('');
-    setPhone('');
-    setCompany('');
-    setSource(LeadSource.WEBSITE);
-    setInterestedService('');
-    setEstimatedBudget('');
-    setCurrency('USD');
-    setDescription('');
-    setNextFollowUpDate('');
-    setFollowUpNotes('');
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      toast.error('Contact or business name is required');
-      return;
-    }
-
+  const onSubmit = async (values: CreateLeadFormValues) => {
     setLoading(true);
     try {
       const payload: CreateLeadPayload = {
-        name: name.trim(),
-        title: title.trim() || undefined,
+        name: values.name.trim(),
+        title: values.title?.trim() || undefined,
         contactId: initialContact?.contactId || undefined,
-        email: email.trim() || undefined,
-        phone: phone.trim() || undefined,
-        company: company.trim() || undefined,
-        source,
-        interestedService: interestedService.trim() || undefined,
-        estimatedBudget: estimatedBudget ? Number(estimatedBudget) : undefined,
-        currency,
-        description: description.trim() || undefined,
-        nextFollowUpDate: nextFollowUpDate ? new Date(nextFollowUpDate).toISOString() : undefined,
-        followUpNotes: followUpNotes.trim() || undefined,
+        email: values.email?.trim() || undefined,
+        phone: values.phone?.trim() || undefined,
+        company: values.company?.trim() || undefined,
+        source: values.source,
+        interestedService: values.interestedService?.trim() || undefined,
+        estimatedBudget:
+          values.estimatedBudget && !isNaN(Number(values.estimatedBudget))
+            ? Number(values.estimatedBudget)
+            : undefined,
+        currency: values.currency || 'USD',
+        description: values.description?.trim() || undefined,
+        nextFollowUpDate: values.nextFollowUpDate
+          ? new Date(values.nextFollowUpDate).toISOString()
+          : undefined,
+        followUpNotes: values.followUpNotes?.trim() || undefined,
       };
 
       const created = await leadsApi.createLead(payload);
       toast.success('Lead captured successfully!');
-      resetForm();
+      form.reset(DEFAULT_FORM_VALUES);
       onOpenChange(false);
       if (onSuccess) onSuccess(created);
     } catch (err: any) {
@@ -138,9 +151,6 @@ export function CreateLeadDialog({
       setLoading(false);
     }
   };
-
-  const selectedCurrencySymbol =
-    CURRENCIES.find((c) => c.code === currency)?.symbol || '$';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -162,7 +172,7 @@ export function CreateLeadDialog({
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className='space-y-6 pt-2'>
+        <Form form={form} onSubmit={form.handleSubmit(onSubmit)} className='space-y-6 pt-2'>
           {/* Section 1: Contact Information */}
           <div className='rounded-xl border border-border/50 bg-card/60 p-4 sm:p-5 space-y-4'>
             <div className='flex items-center gap-2 pb-1 border-b border-border/40'>
@@ -173,72 +183,107 @@ export function CreateLeadDialog({
             </div>
 
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-              <div className='space-y-1.5'>
-                <Label htmlFor='lead-name' className='text-xs font-medium'>
-                  Contact or Business Name <span className='text-destructive'>*</span>
-                </Label>
-                <div className='relative'>
-                  <IconUser className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-                  <Input
-                    id='lead-name'
-                    placeholder='e.g. Acme Studio or Sarah Connor'
-                    className='pl-9 h-10'
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
+              {/* Contact / Business Name */}
+              <FormField
+                control={form.control}
+                name='name'
+                render={({ field }) => (
+                  <FormItem className='space-y-1.5'>
+                    <FormLabel className='text-xs font-medium'>
+                      Contact or Business Name <span className='text-destructive'>*</span>
+                    </FormLabel>
+                    <div className='relative'>
+                      <IconUser className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                      <FormControl>
+                        <Input
+                          placeholder='e.g. Acme Studio or Rajesh Sharma'
+                          className='pl-9 h-10'
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className='space-y-1.5'>
-                <Label htmlFor='lead-company' className='text-xs font-medium'>
-                  Company / Organization
-                </Label>
-                <div className='relative'>
-                  <IconBuilding className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-                  <Input
-                    id='lead-company'
-                    placeholder='e.g. Acme Studio Inc.'
-                    className='pl-9 h-10'
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                  />
-                </div>
-              </div>
+              {/* Company / Organization */}
+              <FormField
+                control={form.control}
+                name='company'
+                render={({ field }) => (
+                  <FormItem className='space-y-1.5'>
+                    <FormLabel className='text-xs font-medium'>
+                      Company / Organization
+                    </FormLabel>
+                    <div className='relative'>
+                      <IconBuilding className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                      <FormControl>
+                        <Input
+                          placeholder='e.g. Acme Studio Inc.'
+                          className='pl-9 h-10'
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className='space-y-1.5'>
-                <Label htmlFor='lead-email' className='text-xs font-medium'>
-                  Email Address
-                </Label>
-                <div className='relative'>
-                  <IconMail className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-                  <Input
-                    id='lead-email'
-                    type='email'
-                    placeholder='contact@acmestudio.com'
-                    className='pl-9 h-10'
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-              </div>
+              {/* Email Address */}
+              <FormField
+                control={form.control}
+                name='email'
+                render={({ field }) => (
+                  <FormItem className='space-y-1.5'>
+                    <FormLabel className='text-xs font-medium'>
+                      Email Address
+                    </FormLabel>
+                    <div className='relative'>
+                      <IconMail className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                      <FormControl>
+                        <Input
+                          type='email'
+                          placeholder='contact@acmestudio.com'
+                          className='pl-9 h-10'
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className='space-y-1.5'>
-                <Label htmlFor='lead-phone' className='text-xs font-medium'>
-                  Phone Number
-                </Label>
-                <div className='relative'>
-                  <IconPhone className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-                  <Input
-                    id='lead-phone'
-                    type='tel'
-                    placeholder='+1 (555) 012-3456'
-                    className='pl-9 h-10'
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                </div>
-              </div>
+              {/* Phone Number */}
+              <FormField
+                control={form.control}
+                name='phone'
+                render={({ field }) => (
+                  <FormItem className='space-y-1.5'>
+                    <FormLabel className='text-xs font-medium'>
+                      Phone Number
+                    </FormLabel>
+                    <div className='relative'>
+                      <IconPhone className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                      <FormControl>
+                        <Input
+                          type='tel'
+                          placeholder='+91 98765 43210'
+                          className='pl-9 h-10'
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
 
@@ -252,109 +297,160 @@ export function CreateLeadDialog({
             </div>
 
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-              <div className='space-y-1.5'>
-                <Label htmlFor='lead-title' className='text-xs font-medium'>
-                  Opportunity Title
-                </Label>
-                <Input
-                  id='lead-title'
-                  placeholder='e.g. Website Redesign & SEO'
-                  className='h-10'
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </div>
+              {/* Opportunity Title */}
+              <FormField
+                control={form.control}
+                name='title'
+                render={({ field }) => (
+                  <FormItem className='space-y-1.5'>
+                    <FormLabel className='text-xs font-medium'>
+                      Opportunity Title
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='e.g. Website Redesign & SEO'
+                        className='h-10'
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className='space-y-1.5'>
-                <Label htmlFor='lead-service' className='text-xs font-medium'>
-                  Interested Service
-                </Label>
-                <Input
-                  id='lead-service'
-                  placeholder='e.g. Full-Stack Web App, Brand Identity'
-                  className='h-10'
-                  value={interestedService}
-                  onChange={(e) => setInterestedService(e.target.value)}
-                />
-              </div>
+              {/* Interested Service */}
+              <FormField
+                control={form.control}
+                name='interestedService'
+                render={({ field }) => (
+                  <FormItem className='space-y-1.5'>
+                    <FormLabel className='text-xs font-medium'>
+                      Interested Service
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder='e.g. Full-Stack Web App, Brand Identity'
+                        className='h-10'
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className='space-y-1.5'>
-                <Label htmlFor='lead-source' className='text-xs font-medium'>
-                  Lead Acquisition Source
-                </Label>
-                <Select
-                  value={source}
-                  onValueChange={(val) => setSource(val as LeadSource)}
-                >
-                  <SelectTrigger id='lead-source' className='h-10'>
-                    <SelectValue placeholder='Select source' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(SOURCE_CONFIG).map(([key, config]) => {
-                      const Icon = config.icon;
-                      return (
-                        <SelectItem key={key} value={key}>
-                          <div className='flex items-center gap-2'>
-                            <Icon className='h-4 w-4 text-muted-foreground' />
-                            <span>{config.label}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Source */}
+              <FormField
+                control={form.control}
+                name='source'
+                render={({ field }) => (
+                  <FormItem className='space-y-1.5'>
+                    <FormLabel className='text-xs font-medium'>
+                      Lead Acquisition Source
+                    </FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger id='lead-source' className='h-10'>
+                          <SelectValue placeholder='Select source' />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(SOURCE_CONFIG).map(([key, config]) => {
+                          const Icon = config.icon;
+                          return (
+                            <SelectItem key={key} value={key}>
+                              <div className='flex items-center gap-2'>
+                                <Icon className='h-4 w-4 text-muted-foreground' />
+                                <span>{config.label}</span>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className='space-y-1.5'>
-                <Label htmlFor='lead-budget' className='text-xs font-medium'>
-                  Estimated Project Budget
-                </Label>
-                <div className='flex gap-2.5'>
-                  <Select value={currency} onValueChange={setCurrency}>
-                    <SelectTrigger className='w-[110px] h-10 shrink-0 font-medium'>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CURRENCIES.map((c) => (
-                        <SelectItem key={c.code} value={c.code}>
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {/* Estimated Budget & Currency */}
+              <FormField
+                control={form.control}
+                name='estimatedBudget'
+                render={({ field }) => (
+                  <FormItem className='space-y-1.5'>
+                    <FormLabel className='text-xs font-medium'>
+                      Estimated Project Budget
+                    </FormLabel>
+                    <div className='flex gap-2.5'>
+                      <Select
+                        value={currencyValue}
+                        onValueChange={(val) => form.setValue('currency', val, { shouldValidate: true })}
+                      >
+                        <SelectTrigger className='w-[110px] h-10 shrink-0 font-medium'>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CURRENCIES.map((c) => (
+                            <SelectItem key={c.code} value={c.code}>
+                              {c.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
 
-                  <div className='relative flex-1'>
-                    <span className='absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground'>
-                      {selectedCurrencySymbol}
-                    </span>
-                    <Input
-                      id='lead-budget'
-                      type='number'
-                      min='0'
-                      step='100'
-                      placeholder='25,000'
-                      className='pl-8 h-10 font-medium tabular-nums'
-                      value={estimatedBudget}
-                      onChange={(e) => setEstimatedBudget(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className='space-y-1.5 pt-1'>
-              <Label htmlFor='lead-description' className='text-xs font-medium'>
-                Project Requirements & Inquiry Notes
-              </Label>
-              <Textarea
-                id='lead-description'
-                rows={3}
-                placeholder='Add project brief, timeline expectations, tech preferences, or client requirements notes...'
-                className='resize-y'
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                      <div className='relative flex-1'>
+                        <span className='absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground'>
+                          {selectedCurrencySymbol}
+                        </span>
+                        <FormControl>
+                          <Input
+                            id='lead-budget'
+                            type='number'
+                            min='0'
+                            step='100'
+                            placeholder='25,000'
+                            className='pl-8 h-10 font-medium tabular-nums'
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                      </div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
+
+            {/* Description */}
+            <FormField
+              control={form.control}
+              name='description'
+              render={({ field }) => (
+                <FormItem className='space-y-1.5 pt-1'>
+                  <FormLabel className='text-xs font-medium'>
+                    Project Requirements & Inquiry Notes
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      id='lead-description'
+                      rows={3}
+                      placeholder='Add project brief, timeline expectations, tech preferences, or client requirements notes...'
+                      className='resize-y'
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
           {/* Section 3: Initial Follow-up Reminder */}
@@ -370,31 +466,51 @@ export function CreateLeadDialog({
             </div>
 
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-              <div className='space-y-1.5'>
-                <Label htmlFor='lead-followup-date' className='text-xs font-medium'>
-                  Follow-up Due Date & Time
-                </Label>
-                <Input
-                  id='lead-followup-date'
-                  type='datetime-local'
-                  className='h-10'
-                  value={nextFollowUpDate}
-                  onChange={(e) => setNextFollowUpDate(e.target.value)}
-                />
-              </div>
+              {/* Follow-up Due Date */}
+              <FormField
+                control={form.control}
+                name='nextFollowUpDate'
+                render={({ field }) => (
+                  <FormItem className='space-y-1.5'>
+                    <FormLabel className='text-xs font-medium'>
+                      Follow-up Due Date & Time
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        id='lead-followup-date'
+                        type='datetime-local'
+                        className='h-10'
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className='space-y-1.5'>
-                <Label htmlFor='lead-followup-notes' className='text-xs font-medium'>
-                  Reminder Note
-                </Label>
-                <Input
-                  id='lead-followup-notes'
-                  placeholder='e.g. Call to discuss the quotation after partner review'
-                  className='h-10'
-                  value={followUpNotes}
-                  onChange={(e) => setFollowUpNotes(e.target.value)}
-                />
-              </div>
+              {/* Follow-up Notes */}
+              <FormField
+                control={form.control}
+                name='followUpNotes'
+                render={({ field }) => (
+                  <FormItem className='space-y-1.5'>
+                    <FormLabel className='text-xs font-medium'>
+                      Reminder Note
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        id='lead-followup-notes'
+                        placeholder='e.g. Call to discuss the quotation after partner review'
+                        className='h-10'
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
 
@@ -427,7 +543,7 @@ export function CreateLeadDialog({
               )}
             </Button>
           </DialogFooter>
-        </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

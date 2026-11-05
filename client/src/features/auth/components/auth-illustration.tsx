@@ -1,93 +1,6 @@
 'use client';
 
-import { cn } from '@/shared/utils/utils';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
-
-interface FloatingShape {
-  id: number;
-  x: number;
-  y: number;
-  size: number;
-  rotation: number;
-  type: 'circle' | 'square' | 'triangle' | 'ring';
-  delay: number;
-  duration: number;
-}
-
-function generateShapes(count: number): FloatingShape[] {
-  const types: FloatingShape['type'][] = ['circle', 'square', 'triangle', 'ring'];
-  return Array.from({ length: count }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: 20 + Math.random() * 60,
-    rotation: Math.random() * 360,
-    type: types[i % types.length],
-    delay: Math.random() * 5,
-    duration: 15 + Math.random() * 20,
-  }));
-}
-
-function Shape({ shape }: { shape: FloatingShape }) {
-  const style: React.CSSProperties = {
-    left: `${shape.x}%`,
-    top: `${shape.y}%`,
-    width: shape.size,
-    height: shape.size,
-    animationDelay: `${shape.delay}s`,
-    animationDuration: `${shape.duration}s`,
-  };
-
-  const baseClass =
-    'absolute opacity-[0.07] animate-[float_linear_infinite_alternate]';
-
-  switch (shape.type) {
-    case 'circle':
-      return (
-        <div
-          className={cn(baseClass, 'rounded-full bg-primary')}
-          style={style}
-        />
-      );
-    case 'square':
-      return (
-        <div
-          className={cn(baseClass, 'rounded-lg border-2 border-primary')}
-          style={{
-            ...style,
-            transform: `rotate(${shape.rotation}deg)`,
-          }}
-        />
-      );
-    case 'triangle':
-      return (
-        <div
-          className={cn(baseClass)}
-          style={{
-            ...style,
-            width: 0,
-            height: 0,
-            borderLeft: `${shape.size / 2}px solid transparent`,
-            borderRight: `${shape.size / 2}px solid transparent`,
-            borderBottom: `${shape.size}px solid var(--primary)`,
-            transform: `rotate(${shape.rotation}deg)`,
-            background: 'none',
-          }}
-        />
-      );
-    case 'ring':
-      return (
-        <div
-          className={cn(
-            baseClass,
-            'rounded-full border-2 border-primary bg-transparent'
-          )}
-          style={style}
-        />
-      );
-  }
-}
 
 export function AuthIllustration({
   title,
@@ -96,30 +9,18 @@ export function AuthIllustration({
   title: string;
   subtitle: string;
 }) {
-  const [shapes, setShapes] = useState<FloatingShape[]>([]);
-
-  useEffect(() => {
-    setShapes(generateShapes(12));
-  }, []);
-
   return (
     <div className='relative hidden h-full flex-col overflow-hidden lg:flex'>
-      {/* Gradient background */}
-      <div className='absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-primary/5' />
+      {/* Background gradient with subtle reddish aura */}
+      <div className='absolute inset-0 bg-gradient-to-br from-rose-500/10 via-background to-rose-950/20' />
 
-      {/* Radial glow */}
-      <div className='absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl' />
+      {/* Atmospheric reddish accent glow centered around the text area */}
+      <div className='pointer-events-none absolute left-1/2 top-1/2 h-[550px] w-[550px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-rose-500/20 dark:bg-rose-500/25 blur-[140px]' />
+      <div className='pointer-events-none absolute left-1/4 top-2/3 h-[400px] w-[400px] -translate-x-1/2 rounded-full bg-rose-600/15 dark:bg-rose-600/20 blur-[110px]' />
 
-      {/* Floating shapes */}
-      <div className='absolute inset-0'>
-        {shapes.map((shape) => (
-          <Shape key={shape.id} shape={shape} />
-        ))}
-      </div>
-
-      {/* Grid pattern overlay */}
+      {/* Subtle grid pattern overlay */}
       <div
-        className='absolute inset-0 opacity-[0.03]'
+        className='pointer-events-none absolute inset-0 opacity-[0.04]'
         style={{
           backgroundImage: `linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(to right, var(--foreground) 1px, transparent 1px)`,
           backgroundSize: '40px 40px',

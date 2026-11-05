@@ -30,6 +30,14 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
+    title: 'Quotations',
+    url: '/dashboard/quotations',
+    icon: 'quotations',
+    isActive: false,
+    shortcut: ['q', 't'],
+    items: []
+  },
+  {
     title: 'Kanban',
     url: '/dashboard/kanban',
     icon: 'kanban',

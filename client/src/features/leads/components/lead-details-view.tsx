@@ -152,6 +152,20 @@ export function LeadDetailsView({
           <Button
             variant='outline'
             size='sm'
+            asChild
+            className='gap-1.5'
+          >
+            <Link
+              href={`/dashboard/quotations/new?leadId=${lead.leadId}&title=${encodeURIComponent(lead.title)}`}
+            >
+              <IconFileInvoice className='h-4 w-4' />
+              <span>Create Quotation</span>
+            </Link>
+          </Button>
+
+          <Button
+            variant='outline'
+            size='sm'
             onClick={() => setStatusDialogOpen(true)}
             className='gap-1.5'
           >

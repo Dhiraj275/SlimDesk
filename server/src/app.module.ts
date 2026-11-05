@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ContactsModule } from './contacts/contacts.module.js';
 import { LeadsModule } from './leads/leads.module.js';
+import { QuotationsModule } from './quotations/quotations.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -35,6 +36,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     AuthModule,
     ContactsModule,
     LeadsModule,
+    QuotationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

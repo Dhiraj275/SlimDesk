@@ -82,5 +82,6 @@ export const Icons = {
   users: IconUsers,
   leads: IconUsers,
   contacts: IconAddressBook,
+  quotations: IconFileText,
   notification: IconNotification
 };
