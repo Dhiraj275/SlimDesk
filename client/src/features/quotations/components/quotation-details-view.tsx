@@ -9,6 +9,7 @@ import { QuotationDocument } from './quotation-preview/quotation-document';
 import { QuotationStatusBadge } from './quotation-status-badge';
 import { SendQuotationDialog } from './send-quotation-dialog';
 import { ConvertToInvoiceDialog } from './convert-to-invoice-dialog';
+import { PdfActionsMenu } from '../pdf/pdf-actions-menu';
 import { quotationsApi } from '../api/quotations.api';
 import { Quotation } from '../types/quotation.types';
 import { toast } from 'sonner';
@@ -109,16 +110,7 @@ export const QuotationDetailsView: React.FC<QuotationDetailsViewProps> = ({
         </Button>
 
         <div className='flex items-center flex-wrap gap-2'>
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            onClick={handlePrint}
-            className='h-9 text-xs gap-1.5'
-          >
-            <IconPrinter className='h-4 w-4' />
-            <span>Print / PDF</span>
-          </Button>
+          <PdfActionsMenu quotation={quotation} />
 
           <Button
             type='button'

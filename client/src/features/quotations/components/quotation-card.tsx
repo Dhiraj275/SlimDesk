@@ -13,6 +13,7 @@ import {
 } from '@/shared/components/ui/dropdown-menu';
 import { QuotationStatusBadge } from './quotation-status-badge';
 import { Quotation } from '../types/quotation.types';
+import { downloadQuotationPdf } from '../pdf/pdf-actions-manager';
 import {
   IconDotsVertical,
   IconEye,
@@ -23,6 +24,7 @@ import {
   IconTrash,
   IconCalendar,
   IconBuilding,
+  IconDownload,
 } from '@tabler/icons-react';
 
 interface QuotationCardProps {
@@ -108,6 +110,14 @@ export const QuotationCard: React.FC<QuotationCardProps> = ({
                   <IconEye className='h-4 w-4' />
                   <span>View Details</span>
                 </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => downloadQuotationPdf(quotation)}
+                className='flex items-center gap-2 cursor-pointer'
+              >
+                <IconDownload className='h-4 w-4 text-primary' />
+                <span>Download PDF</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem asChild>

@@ -18,6 +18,7 @@ import { TaxConfigurationCard } from './tax-configuration-card';
 import { LineItemsEditor } from './line-items-editor';
 import { TermsAndPaymentCard } from './terms-and-payment-card';
 import { QuotationDocument } from '../quotation-preview/quotation-document';
+import { PdfActionsMenu } from '../../pdf/pdf-actions-menu';
 import { calculateQuotationSummary, FormItemInput } from '../../utils/quotation-calc';
 import { quotationsApi } from '../../api/quotations.api';
 import { contactsApi } from '@/features/contacts/api/contacts.api';
@@ -378,7 +379,10 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
 
       {/* Main Content: Editor Tab vs Live Preview Tab */}
       {activeTab === 'preview' ? (
-        <div className='animate-in fade-in-50 duration-200'>
+        <div className='animate-in fade-in-50 duration-200 space-y-4'>
+          <div className='flex justify-end'>
+            <PdfActionsMenu quotation={previewQuotation as any} />
+          </div>
           <QuotationDocument quotation={previewQuotation as any} />
         </div>
       ) : (

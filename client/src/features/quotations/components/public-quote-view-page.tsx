@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { QuotationDocument } from './quotation-preview/quotation-document';
+import { PdfActionsMenu } from '../pdf/pdf-actions-menu';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -130,16 +131,7 @@ export const PublicQuoteViewPage: React.FC<PublicQuoteViewPageProps> = ({
 
             {/* Action Buttons */}
             <div className='flex items-center gap-2.5 self-stretch sm:self-auto'>
-              <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                onClick={handlePrint}
-                className='h-9 text-xs gap-1.5'
-              >
-                <IconPrinter className='h-4 w-4' />
-                <span>Print / PDF</span>
-              </Button>
+              <PdfActionsMenu quotation={quotation} />
 
               {canAcceptOrReject && (
                 <>
