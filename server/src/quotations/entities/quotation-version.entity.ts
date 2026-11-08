@@ -52,6 +52,6 @@ export class QuotationVersion {
   createdAt: Date;
 
   @ManyToOne('Quotation', 'versions', { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'quotation_id' })
+  @JoinColumn({ name: 'quotationId' })
   quotation?: Quotation;
 }

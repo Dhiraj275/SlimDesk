@@ -241,15 +241,17 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
         paymentSchedule,
         terms,
         notes,
-        items: items.map((i, idx) => ({
-          description: i.description,
-          quantity: Number(i.quantity) || 1,
-          unit: i.unit || 'units',
-          unitPrice: Number(i.unitPrice) || 0,
-          discount: Number(i.discount) || 0,
-          taxRate: taxMode === 'none' ? 0 : Number(i.taxRate) || 0,
-          sortOrder: idx,
-        })),
+        items: items
+          .filter((i) => i.description.trim() || Number(i.unitPrice) > 0)
+          .map((i, idx) => ({
+            description: i.description.trim() || `Deliverable ${idx + 1}`,
+            quantity: Math.max(0.01, Number(i.quantity) || 1),
+            unit: i.unit || 'units',
+            unitPrice: Math.max(0, Number(i.unitPrice) || 0),
+            discount: Math.max(0, Number(i.discount) || 0),
+            taxRate: taxMode === 'none' ? 0 : Math.max(0, Number(i.taxRate) || 0),
+            sortOrder: idx,
+          })),
       };
 
       let saved: Quotation;
