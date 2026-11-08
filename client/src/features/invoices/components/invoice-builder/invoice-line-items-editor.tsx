@@ -114,257 +114,262 @@ export const InvoiceLineItemsEditor: React.FC<InvoiceLineItemsEditorProps> = ({
   };
 
   return (
-    <Card className='border-border/60 shadow-2xs'>
-      <CardHeader className='pb-3 pt-5 px-5 sm:px-6 flex flex-row items-center justify-between border-b border-border/40'>
-        <div>
-          <CardTitle className='text-sm sm:text-base font-bold text-foreground'>
+    <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
+      <CardHeader className='pb-3 flex flex-row items-center justify-between'>
+        <div className='space-y-1'>
+          <CardTitle className='text-sm font-semibold flex items-center gap-2 text-foreground'>
+            <IconLayersLinked className='h-4 w-4 text-primary' />
             Billed Deliverables & Services
           </CardTitle>
-          <p className='text-xs text-muted-foreground mt-0.5'>
+          <p className='text-xs text-muted-foreground'>
             Itemize services, deliverables, hours or units requested for payment.
           </p>
         </div>
+
         <Button
           type='button'
+          variant='outline'
           size='sm'
           onClick={addItem}
-          className='gap-1.5 h-8 text-xs font-medium shadow-2xs'
+          className='h-9 text-xs gap-1.5 shrink-0'
         >
-          <IconPlus className='h-3.5 w-3.5' />
-          <span>Add Line Item</span>
+          <IconPlus className='h-4 w-4' />
+          <span>Add Item</span>
         </Button>
       </CardHeader>
 
-      <CardContent className='p-4 sm:p-6 space-y-3'>
+      <CardContent className='p-0 sm:p-6 sm:pt-0'>
         {items.length === 0 ? (
-          <div className='rounded-xl border border-dashed border-border/80 p-8 text-center bg-muted/10'>
-            <div className='mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary mb-2'>
-              <IconLayersLinked className='h-5 w-5' />
+          <div className='flex flex-col items-center justify-center p-8 sm:p-12 text-center border-t sm:border border-border/50 sm:rounded-xl bg-muted/10'>
+            <div className='flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3'>
+              <IconLayersLinked className='h-6 w-6' />
             </div>
-            <p className='text-xs font-semibold text-foreground'>No items added yet</p>
-            <p className='text-[11px] text-muted-foreground mt-0.5'>
-              Add deliverables or services to request payment.
+            <h3 className='text-sm font-semibold text-foreground mb-1'>
+              No Deliverables Added Yet
+            </h3>
+            <p className='text-xs text-muted-foreground max-w-sm mb-4'>
+              Add deliverable milestones, services, or units to build your invoice.
             </p>
             <Button
               type='button'
-              size='sm'
-              variant='outline'
               onClick={addItem}
-              className='mt-3 h-8 text-xs gap-1.5 font-medium'
+              className='h-9 text-xs gap-1.5 font-semibold'
             >
-              <IconPlus className='h-3.5 w-3.5' />
-              <span>Add First Item</span>
+              <IconPlus className='h-4 w-4' />
+              <span>Add First Line Item</span>
             </Button>
           </div>
         ) : (
-          <div className='space-y-3'>
-            {items.map((item, index) => {
-              const qty = parseFloat(String(item.quantity || 0)) || 0;
-              const price = parseFloat(String(item.unitPrice || 0)) || 0;
-              const disc = parseFloat(String(item.discountAmount || 0)) || 0;
-              const taxable = Math.max(0, qty * price - disc);
-              const rate = isTaxActive ? parseFloat(String(item.taxRate || 0)) || 0 : 0;
-              const tax = taxable * (rate / 100);
-              const lineTotal = taxable + tax;
-
-              return (
-                <div
-                  key={index}
-                  className='rounded-xl border border-border/60 bg-card p-3 sm:p-4 shadow-2xs space-y-3 hover:border-border transition-colors'
-                >
-                  <div className='flex items-start justify-between gap-3'>
-                    <div className='flex items-center gap-2'>
-                      <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-[11px] font-mono font-bold text-muted-foreground'>
-                        {index + 1}
-                      </span>
-                      <span className='text-xs font-semibold text-foreground/80'>
-                        Item Details
-                      </span>
-                    </div>
-
-                    <div className='flex items-center gap-1'>
-                      <Button
-                        type='button'
-                        variant='ghost'
-                        size='icon'
-                        disabled={index === 0}
-                        onClick={() => moveItem(index, 'up')}
-                        className='h-7 w-7 text-muted-foreground hover:text-foreground'
-                        title='Move Up'
-                      >
-                        <IconArrowUp className='h-3.5 w-3.5' />
-                      </Button>
-                      <Button
-                        type='button'
-                        variant='ghost'
-                        size='icon'
-                        disabled={index === items.length - 1}
-                        onClick={() => moveItem(index, 'down')}
-                        className='h-7 w-7 text-muted-foreground hover:text-foreground'
-                        title='Move Down'
-                      >
-                        <IconArrowDown className='h-3.5 w-3.5' />
-                      </Button>
-                      <Button
-                        type='button'
-                        variant='ghost'
-                        size='icon'
-                        onClick={() => duplicateItem(index)}
-                        className='h-7 w-7 text-muted-foreground hover:text-foreground'
-                        title='Duplicate Item'
-                      >
-                        <IconCopy className='h-3.5 w-3.5' />
-                      </Button>
-                      {items.length > 1 && (
-                        <Button
-                          type='button'
-                          variant='ghost'
-                          size='icon'
-                          onClick={() => removeItem(index)}
-                          className='h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10'
-                          title='Delete Item'
-                        >
-                          <IconTrash className='h-3.5 w-3.5' />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div>
-                    <Input
-                      type='text'
-                      required
-                      placeholder='Description (e.g. UI/UX Design, Frontend Development, API Integration...)'
-                      value={item.description}
-                      onChange={(e) =>
-                        updateItem(index, 'description', e.target.value)
-                      }
-                      className='h-9 text-xs sm:text-sm font-medium bg-background'
-                    />
-                  </div>
-
-                  {/* Numerical Inputs Grid */}
-                  <div className='grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1 text-xs'>
-                    {/* Unit */}
-                    <div className='space-y-1'>
-                      <label className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground block'>
-                        Unit
-                      </label>
-                      <Select
-                        value={item.unit || 'units'}
-                        onValueChange={(val) => updateItem(index, 'unit', val)}
-                      >
-                        <SelectTrigger className='h-8 text-xs bg-background'>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {UNIT_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Qty */}
-                    <div className='space-y-1'>
-                      <label className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground block'>
-                        Qty
-                      </label>
-                      <Input
-                        type='text'
-                        inputMode='decimal'
-                        value={item.quantity ?? ''}
-                        onChange={(e) =>
-                          updateItem(index, 'quantity', e.target.value)
-                        }
-                        className='h-8 text-xs font-mono bg-background'
-                        placeholder='1'
-                      />
-                    </div>
-
-                    {/* Rate */}
-                    <div className='space-y-1'>
-                      <label className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground block'>
-                        Rate ({currencySymbol})
-                      </label>
-                      <Input
-                        type='text'
-                        inputMode='decimal'
-                        value={item.unitPrice ?? ''}
-                        onChange={(e) =>
-                          updateItem(index, 'unitPrice', e.target.value)
-                        }
-                        className='h-8 text-xs font-mono bg-background'
-                        placeholder='0.00'
-                      />
-                    </div>
-
-                    {/* Tax Rate (if active) */}
-                    {isTaxActive ? (
-                      <div className='space-y-1'>
-                        <label className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground block'>
-                          Tax Rate
-                        </label>
-                        <Select
-                          value={String(item.taxRate ?? 18)}
-                          onValueChange={(val) =>
-                            updateItem(index, 'taxRate', parseFloat(val))
-                          }
-                        >
-                          <SelectTrigger className='h-8 text-xs bg-background font-mono'>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {GST_RATE_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={String(opt.value)}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ) : (
-                      <div className='space-y-1'>
-                        <label className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground block'>
-                          Discount ({currencySymbol})
-                        </label>
-                        <Input
-                          type='text'
-                          inputMode='decimal'
-                          value={item.discountAmount ?? 0}
-                          onChange={(e) =>
-                            updateItem(index, 'discountAmount', e.target.value)
-                          }
-                          className='h-8 text-xs font-mono bg-background'
-                          placeholder='0'
-                        />
-                      </div>
+          <div className='border-t sm:border border-border/50 sm:rounded-xl overflow-hidden'>
+            <div className='overflow-x-auto custom-scrollbar'>
+              <table className='w-full text-left text-xs'>
+                <thead>
+                  <tr className='border-b border-border/50 bg-muted/30 font-semibold uppercase tracking-wider text-muted-foreground text-[11px]'>
+                    <th className='py-3 pl-4 pr-2 w-12 text-center'>#</th>
+                    <th className='py-3 px-2 min-w-[200px]'>Deliverable Description</th>
+                    <th className='px-2 py-3 w-20 text-center'>Qty</th>
+                    <th className='px-2 py-3 w-28'>Unit</th>
+                    <th className='px-2 py-3 w-32 text-right'>Rate ({currencySymbol})</th>
+                    {isTaxActive && (
+                      <th className='px-2 py-3 w-24 text-center'>Tax Rate</th>
                     )}
+                    <th className='px-2 py-3 w-32 text-right'>Subtotal</th>
+                    <th className='py-3 pl-1 pr-4 sm:pr-4 w-28 text-right'>Actions</th>
+                  </tr>
+                </thead>
+                <tbody className='divide-y divide-border/40'>
+                  {items.map((item, index) => {
+                    const qty = Number(item.quantity) || 0;
+                    const price = Number(item.unitPrice) || 0;
+                    const disc = Number(item.discountAmount) || 0;
+                    const lineSubtotal = Math.max(0, qty * price - disc);
 
-                    {/* Line Total */}
-                    <div className='space-y-1 col-span-2 sm:col-span-1 text-right flex flex-col justify-end'>
-                      <label className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground block text-right'>
-                        Line Total
-                      </label>
-                      <div className='h-8 flex items-center justify-end font-mono font-bold text-xs sm:text-sm text-foreground'>
-                        {currencySymbol}
-                        {lineTotal.toLocaleString('en-IN', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                    return (
+                      <tr key={index} className='hover:bg-muted/20 transition-colors group'>
+                        {/* Index */}
+                        <td className='py-2.5 pl-4 pr-2 text-center text-muted-foreground font-mono text-[11px] align-middle'>
+                          {index + 1}
+                        </td>
+
+                        {/* Description */}
+                        <td className='py-2.5 px-2 align-top'>
+                          <Input
+                            value={item.description}
+                            onChange={(e) =>
+                              updateItem(index, 'description', e.target.value)
+                            }
+                            placeholder='e.g. UX wireframes, landing page UI, React frontend...'
+                            className='h-9 text-xs'
+                          />
+                        </td>
+
+                        {/* Qty */}
+                        <td className='px-2 py-2.5 align-top'>
+                          <Input
+                            type='text'
+                            inputMode='decimal'
+                            value={item.quantity ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                updateItem(index, 'quantity', val);
+                              }
+                            }}
+                            placeholder='1'
+                            className='h-9 text-xs text-center tabular-nums font-mono'
+                          />
+                        </td>
+
+                        {/* Unit */}
+                        <td className='px-2 py-2.5 align-top'>
+                          <Select
+                            value={item.unit || 'units'}
+                            onValueChange={(val) => updateItem(index, 'unit', val)}
+                          >
+                            <SelectTrigger className='h-9 text-xs'>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {UNIT_OPTIONS.map((u) => (
+                                <SelectItem key={u.value} value={u.value} className='text-xs'>
+                                  {u.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </td>
+
+                        {/* Unit Price */}
+                        <td className='px-2 py-2.5 align-top'>
+                          <Input
+                            type='text'
+                            inputMode='decimal'
+                            value={item.unitPrice ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                updateItem(index, 'unitPrice', val);
+                              }
+                            }}
+                            placeholder='0'
+                            className='h-9 text-xs text-right tabular-nums font-mono'
+                          />
+                        </td>
+
+                        {/* Tax Rate (Only when tax mode active) */}
+                        {isTaxActive && (
+                          <td className='px-2 py-2.5 align-top'>
+                            <Select
+                              value={String(item.taxRate ?? 0)}
+                              onValueChange={(val) =>
+                                updateItem(index, 'taxRate', parseFloat(val) || 0)
+                              }
+                            >
+                              <SelectTrigger className='h-9 text-xs'>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {GST_RATE_OPTIONS.map((opt) => (
+                                  <SelectItem
+                                    key={opt.value}
+                                    value={String(opt.value)}
+                                    className='text-xs'
+                                  >
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </td>
+                        )}
+
+                        {/* Line Total */}
+                        <td className='px-2 py-2.5 text-right font-semibold font-mono text-foreground text-xs tabular-nums align-middle'>
+                          {currencySymbol}
+                          {lineSubtotal.toLocaleString('en-IN', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
+
+                        {/* Row Actions: Reorder, Duplicate, Delete */}
+                        <td className='py-2.5 pl-1 pr-4 sm:pr-4 text-right align-middle whitespace-nowrap'>
+                          <div className='flex items-center justify-end gap-1'>
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              size='icon'
+                              onClick={() => moveItem(index, 'up')}
+                              disabled={index === 0}
+                              className='h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-30'
+                              title='Move up'
+                            >
+                              <IconArrowUp className='h-3.5 w-3.5' />
+                            </Button>
+
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              size='icon'
+                              onClick={() => moveItem(index, 'down')}
+                              disabled={index === items.length - 1}
+                              className='h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-30'
+                              title='Move down'
+                            >
+                              <IconArrowDown className='h-3.5 w-3.5' />
+                            </Button>
+
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              size='icon'
+                              onClick={() => duplicateItem(index)}
+                              className='h-8 w-8 text-muted-foreground hover:text-foreground'
+                              title='Duplicate item'
+                            >
+                              <IconCopy className='h-3.5 w-3.5' />
+                            </Button>
+
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              size='icon'
+                              onClick={() => removeItem(index)}
+                              disabled={items.length <= 1}
+                              className='h-8 w-8 text-muted-foreground hover:text-destructive disabled:opacity-30'
+                              title='Delete item'
+                            >
+                              <IconTrash className='h-3.5 w-3.5' />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Bottom table bar: Quick add button & summary */}
+            <div className='p-3 border-t border-border/40 bg-muted/20 flex items-center justify-between'>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={addItem}
+                className='h-8 text-xs gap-1.5'
+              >
+                <IconPlus className='h-3.5 w-3.5' />
+                <span>Add Another Deliverable</span>
+              </Button>
+
+              <span className='text-xs text-muted-foreground font-medium'>
+                {items.length} {items.length === 1 ? 'line item' : 'line items'}
+              </span>
+            </div>
           </div>
         )}
       </CardContent>
     </Card>
   );
 };
-

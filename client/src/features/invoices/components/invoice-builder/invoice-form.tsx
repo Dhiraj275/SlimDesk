@@ -24,7 +24,6 @@ import { Contact } from '@/features/contacts/types/contact.types';
 import {
   Invoice,
   CreateInvoicePayload,
-  UpdateInvoicePayload,
   TaxMode,
   PartyInfo,
 } from '../../types/invoice.types';
@@ -36,13 +35,11 @@ import {
   IconDeviceFloppy,
   IconArrowLeft,
   IconUser,
-  IconBuilding,
   IconLoader2,
-  IconCheck,
   IconSend,
   IconCreditCard,
+  IconFileText,
 } from '@tabler/icons-react';
-import { cn } from '@/shared/utils/utils';
 
 interface InvoiceFormProps {
   initialData?: Invoice;
@@ -123,30 +120,20 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
     return [
       {
-        description: 'UI/UX Design & High-Fidelity Wireframes',
-        quantity: 1,
-        unit: 'units',
-        unitPrice: 15000,
-        discountAmount: 0,
-        taxRate: 18,
-        sortOrder: 0,
-      },
-      {
-        description: 'Frontend Development & Responsive Integration',
+        description: 'Frontend Development & UI Implementation',
         quantity: 1,
         unit: 'units',
         unitPrice: 25000,
         discountAmount: 0,
         taxRate: 18,
-        sortOrder: 1,
+        sortOrder: 0,
       },
     ];
   });
 
-  // Payment details, Terms & Notes
   const [paymentDetails, setPaymentDetails] = useState(
     initialData?.paymentDetails ||
-      'Bank: HDFC Bank\nA/C No: 50100012345678\nIFSC: HDFC0001234\nUPI ID: freelancer@upi'
+      'Bank: HDFC Bank\nA/C No: 50100012345678\nIFSC: HDFC0001234\nAccount Name: SlimDesk Freelance\nUPI ID: slimdesk@hdfcbank'
   );
   const [terms, setTerms] = useState(
     initialData?.terms ||
@@ -211,7 +198,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }).format(val || 0);
   };
 
-  // Save draft invoice
+  // Save invoice
   const handleSave = async (autoIssue: boolean = false) => {
     if (!title.trim()) {
       toast.error('Please enter an invoice title');
@@ -294,48 +281,46 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
   };
 
   return (
-    <div className='space-y-6 pb-16'>
-      {/* Top Action Header */}
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/50 pb-5'>
+    <div className='space-y-6 pb-20'>
+      {/* Top Header & Actions Bar */}
+      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
         <div className='flex items-center gap-3'>
           <Button
             type='button'
             variant='ghost'
-            size='icon'
-            onClick={() => router.push('/dashboard/invoices')}
-            className='h-9 w-9 text-muted-foreground hover:text-foreground'
+            size='sm'
+            onClick={() => router.back()}
+            className='-ml-2 h-9 w-9 p-0 text-muted-foreground hover:text-foreground'
           >
             <IconArrowLeft className='h-4 w-4' />
           </Button>
           <div>
-            <div className='flex items-center gap-2'>
-              <h1 className='text-xl sm:text-2xl font-bold tracking-tight text-foreground'>
-                {isEditing ? `Edit ${initialData?.invoiceNumber}` : 'Create New Invoice'}
-              </h1>
-              <span className='px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-semibold border border-blue-500/20'>
-                {isEditing ? initialData?.status : 'Draft'}
-              </span>
-            </div>
-            <p className='text-xs text-muted-foreground mt-0.5'>
-              Specify client billing details, deliverables, payment terms, and bank instructions.
+            <h1 className='text-2xl font-bold tracking-tight text-foreground'>
+              {isEditing
+                ? `Edit ${initialData?.invoiceNumber}`
+                : 'Create New Invoice'}
+            </h1>
+            <p className='text-sm text-muted-foreground'>
+              Issue commercial invoices, specify payment instructions, and track incoming payments.
             </p>
           </div>
         </div>
 
-        {/* Action Buttons & Tabs Toggle */}
-        <div className='flex items-center gap-2 self-end sm:self-auto'>
+        {/* Action Buttons & Tabs */}
+        <div className='flex items-center flex-wrap gap-2.5 self-stretch sm:self-auto'>
           <Tabs
             value={activeTab}
-            onValueChange={(val) => setActiveTab(val as 'editor' | 'preview')}
+            onValueChange={(val) => setActiveTab(val as any)}
+            className='w-auto'
           >
-            <TabsList className='h-9 p-0.5 bg-muted/50'>
-              <TabsTrigger value='editor' className='text-xs gap-1.5 h-8'>
+            <TabsList className='h-9 text-xs p-1'>
+              <TabsTrigger value='editor' className='text-xs flex items-center gap-1.5 px-3 h-7'>
                 <IconEdit className='h-3.5 w-3.5' />
                 <span>Editor</span>
               </TabsTrigger>
-              <TabsTrigger value='preview' className='text-xs gap-1.5 h-8'>
+              <TabsTrigger value='preview' className='text-xs flex items-center gap-1.5 px-3 h-7'>
                 <IconEye className='h-3.5 w-3.5' />
-                <span>Document Preview</span>
+                <span>Live Preview</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -346,12 +331,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             size='sm'
             disabled={isSaving}
             onClick={() => handleSave(false)}
-            className='h-9 text-xs gap-1.5 font-medium shadow-2xs'
+            className='h-9 text-xs font-semibold gap-1.5 shadow-xs'
           >
             {isSaving ? (
-              <IconLoader2 className='h-3.5 w-3.5 animate-spin' />
+              <IconLoader2 className='h-4 w-4 animate-spin' />
             ) : (
-              <IconDeviceFloppy className='h-3.5 w-3.5' />
+              <IconDeviceFloppy className='h-4 w-4' />
             )}
             <span>Save Draft</span>
           </Button>
@@ -361,9 +346,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             size='sm'
             disabled={isSaving}
             onClick={() => handleSave(true)}
-            className='h-9 text-xs gap-1.5 font-medium shadow-2xs bg-blue-600 hover:bg-blue-700 text-white'
+            className='h-9 text-xs font-semibold gap-1.5 shadow-xs'
           >
-            <IconCheck className='h-3.5 w-3.5' />
+            <IconSend className='h-4 w-4' />
             <span>Finalize & Issue</span>
           </Button>
         </div>
@@ -371,7 +356,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
       {/* Main Content: Tab View */}
       {activeTab === 'preview' ? (
-        <div className='py-4'>
+        <div className='animate-in fade-in-50 duration-200 py-4'>
           <InvoiceDocument
             invoice={{
               invoiceNumber: initialData?.invoiceNumber || 'INV-2026-DRAFT',
@@ -400,20 +385,21 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
           />
         </div>
       ) : (
-        <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-          {/* Left 2 Cols: Main Editor */}
-          <div className='lg:col-span-2 space-y-6'>
-            {/* Project / Subject & Basic Details */}
-            <Card className='border-border/60 shadow-2xs'>
-              <CardHeader className='pb-3 pt-5 px-5 sm:px-6 border-b border-border/40'>
-                <CardTitle className='text-sm sm:text-base font-bold text-foreground'>
-                  Invoice Details
+        <div className='grid grid-cols-1 lg:grid-cols-12 gap-6 items-start'>
+          {/* Left Column: Form Details (8 cols) */}
+          <div className='lg:col-span-8 space-y-6'>
+            {/* Header & Meta Card */}
+            <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
+              <CardHeader className='pb-3'>
+                <CardTitle className='text-sm font-semibold flex items-center gap-2 text-foreground'>
+                  <IconReceipt2 className='h-4 w-4 text-primary' />
+                  Invoice Subject & Dates
                 </CardTitle>
               </CardHeader>
-              <CardContent className='p-5 sm:p-6 space-y-4'>
+              <CardContent className='space-y-4'>
                 <div className='space-y-1.5'>
-                  <Label className='text-xs font-semibold'>
-                    Project Subject / Title *
+                  <Label className='text-xs font-medium'>
+                    Invoice Subject / Project Title
                   </Label>
                   <Input
                     type='text'
@@ -421,15 +407,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder='e.g. Website Redesign & Frontend Development'
-                    className='h-9 text-xs sm:text-sm font-medium bg-background'
+                    className='h-10 text-xs sm:text-sm'
                   />
                 </div>
 
-                <div className='grid grid-cols-1 sm:grid-cols-3 gap-3.5'>
+                <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
                   <div className='space-y-1.5'>
-                    <Label className='text-xs font-semibold'>Currency</Label>
+                    <Label className='text-xs font-medium'>Currency</Label>
                     <Select value={currency} onValueChange={setCurrency}>
-                      <SelectTrigger className='h-9 text-xs bg-background font-mono'>
+                      <SelectTrigger className='h-10 text-xs font-mono'>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -443,65 +429,65 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                   </div>
 
                   <div className='space-y-1.5'>
-                    <Label className='text-xs font-semibold'>Invoice Date *</Label>
+                    <Label className='text-xs font-medium'>Invoice Date</Label>
                     <Input
                       type='date'
                       required
                       value={issueDate}
                       onChange={(e) => setIssueDate(e.target.value)}
-                      className='h-9 text-xs bg-background'
+                      className='h-10 text-xs'
                     />
                   </div>
 
                   <div className='space-y-1.5'>
-                    <Label className='text-xs font-semibold'>Payment Due Date *</Label>
+                    <Label className='text-xs font-medium'>Payment Due Date</Label>
                     <Input
                       type='date'
                       required
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className='h-9 text-xs bg-background'
+                      className='h-10 text-xs'
                     />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Client Selection & Information */}
-            <Card className='border-border/60 shadow-2xs'>
-              <CardHeader className='pb-3 pt-5 px-5 sm:px-6 flex flex-row items-center justify-between border-b border-border/40'>
-                <div>
-                  <CardTitle className='text-sm sm:text-base font-bold text-foreground'>
+            {/* Client Selection & Information Card */}
+            <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
+              <CardHeader className='pb-3 flex flex-row items-center justify-between'>
+                <div className='space-y-1'>
+                  <CardTitle className='text-sm font-semibold flex items-center gap-2 text-foreground'>
+                    <IconUser className='h-4 w-4 text-primary' />
                     Client & Billing Information
                   </CardTitle>
-                  <p className='text-xs text-muted-foreground mt-0.5'>
-                    Select an existing contact or enter client details manually.
+                  <p className='text-xs text-muted-foreground'>
+                    Link with an existing contact or enter details directly.
                   </p>
                 </div>
+
                 {contacts.length > 0 && (
-                  <div className='w-48'>
-                    <Select
-                      value={selectedContactId}
-                      onValueChange={handleContactSelect}
-                    >
-                      <SelectTrigger className='h-8 text-xs bg-background'>
-                        <SelectValue placeholder='Select Contact' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {contacts.map((c) => (
-                          <SelectItem key={c.contactId} value={c.contactId}>
-                            {c.name} {c.company ? `(${c.company})` : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select
+                    value={selectedContactId}
+                    onValueChange={handleContactSelect}
+                  >
+                    <SelectTrigger className='h-9 text-xs w-52'>
+                      <SelectValue placeholder='Choose contact...' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contacts.map((c) => (
+                        <SelectItem key={c.contactId} value={c.contactId} className='text-xs'>
+                          {c.name} {c.company ? `(${c.company})` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
               </CardHeader>
-              <CardContent className='p-5 sm:p-6 space-y-4'>
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+              <CardContent className='space-y-4'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                   <div className='space-y-1.5'>
-                    <Label className='text-xs font-semibold'>Client Name *</Label>
+                    <Label className='text-xs font-medium'>Client Contact Name</Label>
                     <Input
                       type='text'
                       required
@@ -509,69 +495,69 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       onChange={(e) =>
                         setClientInfo({ ...clientInfo, name: e.target.value })
                       }
-                      placeholder='e.g. Acme Studio / John Doe'
-                      className='h-9 text-xs bg-background'
+                      placeholder='e.g. Acme Studio / Rajesh Sharma'
+                      className='h-10'
                     />
                   </div>
 
                   <div className='space-y-1.5'>
-                    <Label className='text-xs font-semibold'>Company Name</Label>
+                    <Label className='text-xs font-medium'>Company Name (Optional)</Label>
                     <Input
                       type='text'
-                      value={clientInfo.company}
+                      value={clientInfo.company || ''}
                       onChange={(e) =>
                         setClientInfo({ ...clientInfo, company: e.target.value })
                       }
-                      placeholder='e.g. Acme Studio LLC'
-                      className='h-9 text-xs bg-background'
+                      placeholder='e.g. Acme Studio Inc.'
+                      className='h-10'
                     />
                   </div>
                 </div>
 
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                   <div className='space-y-1.5'>
-                    <Label className='text-xs font-semibold'>Client Email</Label>
+                    <Label className='text-xs font-medium'>Client Email</Label>
                     <Input
                       type='email'
-                      value={clientInfo.email}
+                      value={clientInfo.email || ''}
                       onChange={(e) =>
                         setClientInfo({ ...clientInfo, email: e.target.value })
                       }
-                      placeholder='client@example.com'
-                      className='h-9 text-xs bg-background'
+                      placeholder='client@acme.com'
+                      className='h-10'
                     />
                   </div>
 
                   <div className='space-y-1.5'>
-                    <Label className='text-xs font-semibold'>Client Phone</Label>
+                    <Label className='text-xs font-medium'>Client Phone</Label>
                     <Input
                       type='text'
-                      value={clientInfo.phone}
+                      value={clientInfo.phone || ''}
                       onChange={(e) =>
                         setClientInfo({ ...clientInfo, phone: e.target.value })
                       }
                       placeholder='+91 98765 43210'
-                      className='h-9 text-xs bg-background'
+                      className='h-10'
                     />
                   </div>
                 </div>
 
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                   <div className='space-y-1.5'>
-                    <Label className='text-xs font-semibold'>Client Address</Label>
+                    <Label className='text-xs font-medium'>Client Billing Address</Label>
                     <Input
                       type='text'
-                      value={clientInfo.address}
+                      value={clientInfo.address || ''}
                       onChange={(e) =>
                         setClientInfo({ ...clientInfo, address: e.target.value })
                       }
-                      placeholder='City, State, Country'
-                      className='h-9 text-xs bg-background'
+                      placeholder='Street, City, Pin/Zip Code'
+                      className='h-10'
                     />
                   </div>
 
                   <div className='space-y-1.5'>
-                    <Label className='text-xs font-semibold'>Client GSTIN (optional)</Label>
+                    <Label className='text-xs font-medium'>Client GSTIN (Optional)</Label>
                     <Input
                       type='text'
                       value={clientInfo.gstin || ''}
@@ -579,7 +565,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         setClientInfo({ ...clientInfo, gstin: e.target.value })
                       }
                       placeholder='24XXXXXXXXXXXX'
-                      className='font-mono text-xs h-9 bg-background'
+                      className='font-mono text-xs h-10'
                     />
                   </div>
                 </div>
@@ -595,79 +581,87 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             />
 
             {/* Payment Details & Instructions */}
-            <Card className='border-border/60 shadow-2xs'>
-              <CardHeader className='pb-3 pt-5 px-5 sm:px-6 border-b border-border/40'>
-                <CardTitle className='text-sm sm:text-base font-bold text-foreground flex items-center gap-2'>
-                  <IconCreditCard className='h-4 w-4 text-primary' />
-                  <span>Bank Transfer & UPI Instructions</span>
-                </CardTitle>
-                <p className='text-xs text-muted-foreground mt-0.5'>
-                  Provide your bank account, IFSC code, UPI ID, or remittance guidelines.
-                </p>
+            <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
+              <CardHeader className='pb-3'>
+                <div className='space-y-1'>
+                  <CardTitle className='text-sm font-semibold flex items-center gap-2 text-foreground'>
+                    <IconCreditCard className='h-4 w-4 text-primary' />
+                    Bank Transfer & UPI Instructions
+                  </CardTitle>
+                  <p className='text-xs text-muted-foreground'>
+                    Provide your bank account, IFSC code, UPI ID, or remittance guidelines.
+                  </p>
+                </div>
               </CardHeader>
-              <CardContent className='p-5 sm:p-6 space-y-4'>
+              <CardContent className='space-y-4'>
                 <div className='space-y-1.5'>
                   <Textarea
                     rows={4}
                     value={paymentDetails}
                     onChange={(e) => setPaymentDetails(e.target.value)}
                     placeholder='Bank: HDFC Bank&#10;A/C No: 50100012345678&#10;IFSC: HDFC0001234&#10;UPI ID: freelancer@upi'
-                    className='font-mono text-xs resize-none bg-background leading-relaxed'
+                    className='font-mono text-xs resize-y leading-relaxed'
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Payment Terms & Notes */}
-            <Card className='border-border/60 shadow-2xs'>
-              <CardHeader className='pb-3 pt-5 px-5 sm:px-6 border-b border-border/40'>
-                <CardTitle className='text-sm sm:text-base font-bold text-foreground'>
-                  Payment Terms & Notes
-                </CardTitle>
+            <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
+              <CardHeader className='pb-3'>
+                <div className='space-y-1'>
+                  <CardTitle className='text-sm font-semibold flex items-center gap-2 text-foreground'>
+                    <IconFileText className='h-4 w-4 text-primary' />
+                    Payment Terms & Notes
+                  </CardTitle>
+                  <p className='text-xs text-muted-foreground'>
+                    Specify payment conditions and any closing note to the client.
+                  </p>
+                </div>
               </CardHeader>
-              <CardContent className='p-5 sm:p-6 space-y-4'>
+              <CardContent className='space-y-4'>
                 <div className='space-y-1.5'>
-                  <Label className='text-xs font-semibold'>Payment Terms</Label>
+                  <Label className='text-xs font-medium'>Payment Terms</Label>
                   <Textarea
                     rows={2}
                     value={terms}
                     onChange={(e) => setTerms(e.target.value)}
                     placeholder='Payment due within 14 days of invoice issuance...'
-                    className='text-xs resize-none bg-background leading-relaxed'
+                    className='text-xs resize-y leading-relaxed'
                   />
                 </div>
 
                 <div className='space-y-1.5'>
-                  <Label className='text-xs font-semibold'>Client Notes</Label>
+                  <Label className='text-xs font-medium'>Client Notes / Footer Message</Label>
                   <Textarea
                     rows={2}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder='Thank you for your business! Please include the invoice number in your remarks.'
-                    className='text-xs resize-none bg-background leading-relaxed'
+                    className='text-xs resize-y leading-relaxed'
                   />
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Right Col: Tax Configuration & Financial Summary Card */}
-          <div className='space-y-6'>
+          {/* Right Column: Tax, Profile Snapshot & Financial Summary (4 cols) */}
+          <div className='lg:col-span-4 space-y-6 sticky top-6'>
             {/* Tax Mode Configuration */}
-            <Card className='border-border/60 shadow-2xs'>
-              <CardHeader className='pb-3 pt-5 px-5 border-b border-border/40'>
-                <CardTitle className='text-sm font-bold text-foreground'>
+            <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
+              <CardHeader className='pb-3'>
+                <CardTitle className='text-sm font-semibold text-foreground'>
                   Tax Configuration
                 </CardTitle>
               </CardHeader>
-              <CardContent className='p-5 space-y-4 text-xs'>
+              <CardContent className='space-y-4 text-xs'>
                 <div className='space-y-1.5'>
-                  <Label className='text-xs font-semibold'>Tax Scheme</Label>
+                  <Label className='text-xs font-medium'>Tax Scheme</Label>
                   <Select
                     value={taxMode}
                     onValueChange={(val) => setTaxMode(val as TaxMode)}
                   >
-                    <SelectTrigger className='h-9 text-xs bg-background'>
+                    <SelectTrigger className='h-10 text-xs'>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -692,17 +686,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </Card>
 
             {/* Freelancer Billing Profile Snapshot */}
-            <Card className='border-border/60 shadow-2xs'>
-              <CardHeader className='pb-3 pt-5 px-5 border-b border-border/40'>
-                <CardTitle className='text-sm font-bold text-foreground'>
+            <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
+              <CardHeader className='pb-3'>
+                <CardTitle className='text-sm font-semibold text-foreground'>
                   Freelancer Profile
                 </CardTitle>
               </CardHeader>
-              <CardContent className='p-5 space-y-3 text-xs'>
-                <div className='space-y-1'>
-                  <Label className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
-                    Studio Name
-                  </Label>
+              <CardContent className='space-y-3.5 text-xs'>
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-medium'>Studio / Business Name</Label>
                   <Input
                     type='text'
                     value={freelancerInfo.businessName || freelancerInfo.name}
@@ -712,14 +704,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         businessName: e.target.value,
                       })
                     }
-                    className='h-8 text-xs bg-background'
+                    className='h-9 text-xs'
                   />
                 </div>
 
-                <div className='space-y-1'>
-                  <Label className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
-                    Freelancer GSTIN
-                  </Label>
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-medium'>Freelancer GSTIN</Label>
                   <Input
                     type='text'
                     value={freelancerInfo.gstin || ''}
@@ -730,14 +720,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       })
                     }
                     placeholder='24XXXXXXXXXXXX'
-                    className='h-8 text-xs font-mono bg-background'
+                    className='h-9 text-xs font-mono'
                   />
                 </div>
 
-                <div className='space-y-1'>
-                  <Label className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground'>
-                    Freelancer State
-                  </Label>
+                <div className='space-y-1.5'>
+                  <Label className='text-xs font-medium'>Freelancer State</Label>
                   <Input
                     type='text'
                     value={freelancerInfo.state || ''}
@@ -748,98 +736,87 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       })
                     }
                     placeholder='Maharashtra'
-                    className='h-8 text-xs bg-background'
+                    className='h-9 text-xs'
                   />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Overall Discount Input */}
-            <Card className='border-border/60 shadow-2xs'>
-              <CardHeader className='pb-3 pt-5 px-5 border-b border-border/40'>
-                <CardTitle className='text-sm font-bold text-foreground'>
-                  Invoice-Level Discount
+            {/* Financial Summary Card with Discount */}
+            <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
+              <CardHeader className='pb-3'>
+                <CardTitle className='text-sm font-semibold text-foreground'>
+                  Financial Summary
                 </CardTitle>
               </CardHeader>
-              <CardContent className='p-5 space-y-2 text-xs'>
-                <Label className='text-xs font-semibold'>
-                  Discount Amount ({currencySymbol})
-                </Label>
-                <Input
-                  type='text'
-                  inputMode='decimal'
-                  value={overallDiscount}
-                  onChange={(e) =>
-                    setOverallDiscount(parseFloat(e.target.value) || 0)
-                  }
-                  placeholder='0.00'
-                  className='h-9 text-xs font-mono bg-background'
-                />
-              </CardContent>
-            </Card>
-
-            {/* Real-time Calculation Summary Box */}
-            <Card className='border-border/60 shadow-2xs bg-muted/20'>
-              <CardHeader className='pb-3 pt-5 px-5 border-b border-border/40'>
-                <CardTitle className='text-sm font-bold text-foreground'>
-                  Payment Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className='p-5 space-y-2.5 text-xs'>
+              <CardContent className='space-y-3.5 text-xs'>
                 <div className='flex justify-between items-center text-muted-foreground'>
-                  <span>Subtotal</span>
-                  <span className='font-mono font-medium text-foreground'>
+                  <span>Subtotal ({summary.items.length} line items)</span>
+                  <span className='font-semibold text-foreground text-sm tabular-nums'>
                     {formatCurrency(summary.subtotal)}
                   </span>
                 </div>
 
-                {summary.discountAmount > 0 && (
-                  <div className='flex justify-between items-center text-emerald-600 dark:text-emerald-400'>
-                    <span>Discount</span>
-                    <span className='font-mono font-medium'>
-                      - {formatCurrency(summary.discountAmount)}
-                    </span>
-                  </div>
-                )}
+                <div className='space-y-1.5 pt-1'>
+                  <Label className='text-xs font-medium'>
+                    Overall Discount ({currencySymbol})
+                  </Label>
+                  <Input
+                    type='number'
+                    min='0'
+                    value={overallDiscount}
+                    onChange={(e) =>
+                      setOverallDiscount(parseFloat(e.target.value) || 0)
+                    }
+                    placeholder='0.00'
+                    className='h-10 text-xs text-right tabular-nums'
+                  />
+                </div>
 
+                {/* Tax Breakdown */}
                 {taxMode === 'gst' && summary.taxDetails ? (
                   summary.taxDetails.isInterState ? (
-                    <div className='flex justify-between items-center text-muted-foreground'>
-                      <span>IGST (Inter-state)</span>
-                      <span className='font-mono text-foreground'>
-                        + {formatCurrency(summary.taxDetails.igstAmount)}
-                      </span>
+                    <div className='pt-2 border-t border-dashed border-border/50 space-y-1.5'>
+                      <div className='flex justify-between items-center text-muted-foreground'>
+                        <span>IGST (Inter-state)</span>
+                        <span className='font-semibold text-foreground tabular-nums'>
+                          + {formatCurrency(summary.taxDetails.igstAmount)}
+                        </span>
+                      </div>
                     </div>
                   ) : (
-                    <>
+                    <div className='pt-2 border-t border-dashed border-border/50 space-y-1.5'>
                       <div className='flex justify-between items-center text-muted-foreground'>
                         <span>CGST (Intra-state)</span>
-                        <span className='font-mono text-foreground'>
+                        <span className='font-semibold text-foreground tabular-nums'>
                           + {formatCurrency(summary.taxDetails.cgstAmount)}
                         </span>
                       </div>
                       <div className='flex justify-between items-center text-muted-foreground'>
                         <span>SGST (Intra-state)</span>
-                        <span className='font-mono text-foreground'>
+                        <span className='font-semibold text-foreground tabular-nums'>
                           + {formatCurrency(summary.taxDetails.sgstAmount)}
                         </span>
                       </div>
-                    </>
+                    </div>
                   )
                 ) : summary.taxAmount > 0 ? (
-                  <div className='flex justify-between items-center text-muted-foreground'>
-                    <span>Tax</span>
-                    <span className='font-mono text-foreground'>
-                      + {formatCurrency(summary.taxAmount)}
-                    </span>
+                  <div className='pt-2 border-t border-dashed border-border/50 space-y-1.5'>
+                    <div className='flex justify-between items-center text-muted-foreground'>
+                      <span>Tax Amount</span>
+                      <span className='font-semibold text-foreground tabular-nums'>
+                        + {formatCurrency(summary.taxAmount)}
+                      </span>
+                    </div>
                   </div>
                 ) : null}
 
+                {/* Total */}
                 <div className='pt-3 border-t border-border/60 flex justify-between items-baseline'>
-                  <span className='font-bold uppercase tracking-wider text-foreground text-sm'>
-                    Total Amount
+                  <span className='text-sm font-bold text-foreground'>
+                    Grand Total
                   </span>
-                  <span className='font-mono font-black text-xl text-foreground'>
+                  <span className='text-xl font-bold text-foreground tracking-tight tabular-nums'>
                     {formatCurrency(summary.totalAmount)}
                   </span>
                 </div>
@@ -847,7 +824,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 <div className='pt-2'>
                   <Button
                     type='button'
-                    className='w-full text-xs font-semibold h-10 gap-2 shadow-2xs'
+                    className='w-full text-xs font-semibold h-10 gap-2 shadow-xs'
                     disabled={isSaving}
                     onClick={() => handleSave(false)}
                   >
