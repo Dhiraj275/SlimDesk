@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import PageContainer from '@/shared/components/layout/page-container';
 import { Button } from '@/shared/components/ui/button';
 import { QuotationsOverviewCards } from './quotations-overview-cards';
@@ -24,6 +25,7 @@ import {
 } from '@tabler/icons-react';
 
 export const QuotationsPage: React.FC = () => {
+  const router = useRouter();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [metrics, setMetrics] = useState<QuotationMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -250,9 +252,12 @@ export const QuotationsPage: React.FC = () => {
           quotation={selectedForConvert}
           open={Boolean(selectedForConvert)}
           onOpenChange={(open) => !open && setSelectedForConvert(null)}
-          onSuccess={() => {
+          onSuccess={(invoice) => {
             fetchData();
             setSelectedForConvert(null);
+            if (invoice?.invoiceId) {
+              router.push(`/dashboard/invoices/${invoice.invoiceId}`);
+            }
           }}
         />
       )}

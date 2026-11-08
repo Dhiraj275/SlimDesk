@@ -367,3 +367,4 @@ export const InvoiceLineItemsEditor: React.FC<InvoiceLineItemsEditorProps> = ({
     </Card>
   );
 };
+

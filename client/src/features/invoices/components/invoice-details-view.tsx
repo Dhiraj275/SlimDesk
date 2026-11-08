@@ -574,3 +574,4 @@ export const InvoiceDetailsView: React.FC<InvoiceDetailsViewProps> = ({
     </div>
   );
 };
+

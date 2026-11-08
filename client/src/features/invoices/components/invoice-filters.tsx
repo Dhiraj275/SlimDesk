@@ -198,3 +198,4 @@ export const InvoiceFilters: React.FC<InvoiceFiltersProps> = ({
     </div>
   );
 };
+

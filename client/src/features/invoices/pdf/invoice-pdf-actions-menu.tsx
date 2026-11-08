@@ -160,3 +160,4 @@ export const InvoicePdfActionsMenu: React.FC<InvoicePdfActionsMenuProps> = ({
     </div>
   );
 };
+

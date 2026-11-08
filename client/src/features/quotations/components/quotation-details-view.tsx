@@ -132,17 +132,28 @@ export const QuotationDetailsView: React.FC<QuotationDetailsViewProps> = ({
             </Button>
           )}
 
-          {isAccepted && !isConverted && (
+          {!isConverted ? (
             <Button
               type='button'
               size='sm'
               onClick={() => setIsConvertOpen(true)}
-              className='h-9 text-xs font-semibold gap-1.5 bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-600'
+              className='h-9 text-xs font-semibold gap-1.5 bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-600 shadow-2xs'
             >
               <IconReceipt className='h-4 w-4' />
               <span>Convert to Invoice</span>
             </Button>
-          )}
+          ) : quotation.invoiceId ? (
+            <Button
+              asChild
+              size='sm'
+              className='h-9 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-2xs'
+            >
+              <Link href={`/dashboard/invoices/${quotation.invoiceId}`}>
+                <IconReceipt className='h-4 w-4' />
+                <span>View Invoice</span>
+              </Link>
+            </Button>
+          ) : null}
 
           <Button
             type='button'
@@ -374,8 +385,11 @@ export const QuotationDetailsView: React.FC<QuotationDetailsViewProps> = ({
         quotation={quotation}
         open={isConvertOpen}
         onOpenChange={setIsConvertOpen}
-        onSuccess={() => {
+        onSuccess={(inv) => {
           quotationsApi.getQuotationById(quotation.quotationId).then(setQuotation);
+          if (inv?.invoiceId) {
+            router.push(`/dashboard/invoices/${inv.invoiceId}`);
+          }
         }}
       />
     </div>

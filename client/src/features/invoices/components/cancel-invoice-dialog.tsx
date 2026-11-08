@@ -151,3 +151,4 @@ export const CancelInvoiceDialog: React.FC<CancelInvoiceDialogProps> = ({
     </Dialog>
   );
 };
+

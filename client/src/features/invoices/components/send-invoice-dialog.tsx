@@ -218,3 +218,4 @@ export const SendInvoiceDialog: React.FC<SendInvoiceDialogProps> = ({
     </Dialog>
   );
 };
+

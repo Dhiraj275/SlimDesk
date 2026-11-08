@@ -144,3 +144,4 @@ export const printInvoicePdf = async (invoice: Invoice): Promise<void> => {
     throw error;
   }
 };
+

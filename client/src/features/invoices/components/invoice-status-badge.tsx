@@ -164,3 +164,4 @@ export const InvoiceDualBadges: React.FC<InvoiceDualBadgesProps> = ({
     </div>
   );
 };
+

@@ -386,6 +386,7 @@ export class QuotationsService {
       quotationId: quotation.quotationId,
       contactId: quotation.contactId,
       invoiceNumber,
+      title: quotation.title || 'Services Rendered',
       status: InvoiceStatus.DRAFT,
       currency: quotation.currency,
       issueDate: new Date().toISOString().split('T')[0],
@@ -393,10 +394,14 @@ export class QuotationsService {
         .toISOString()
         .split('T')[0],
       subtotal: quotation.subtotal,
+      discountAmount: Number(quotation.discountAmount) || 0,
       taxAmount: quotation.taxAmount,
       totalAmount: quotation.totalAmount,
+      taxMode: quotation.taxMode,
+      taxDetails: quotation.taxDetails,
       clientInfo: quotation.clientInfo,
       freelancerInfo: quotation.freelancerInfo,
+      publicToken: randomUUID(),
       notes: quotation.paymentSchedule || quotation.notes,
     });
 

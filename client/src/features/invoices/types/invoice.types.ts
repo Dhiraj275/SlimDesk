@@ -224,3 +224,4 @@ export interface InvoiceFilterQuery {
   endDate?: string;
   isOverdue?: boolean;
 }
+

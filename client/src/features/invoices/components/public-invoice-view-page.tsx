@@ -131,3 +131,4 @@ export const PublicInvoiceViewPage: React.FC<PublicInvoiceViewPageProps> = ({
     </div>
   );
 };
+

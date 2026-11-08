@@ -223,15 +223,25 @@ export const QuotationListView: React.FC<QuotationListViewProps> = ({
                           <span>Duplicate</span>
                         </DropdownMenuItem>
 
-                        {isAccepted && !isConverted && (
+                        {!isConverted ? (
                           <DropdownMenuItem
                             onClick={() => onConvert(q)}
-                            className='flex items-center gap-2 cursor-pointer text-emerald-600 dark:text-emerald-400 font-medium'
+                            className='flex items-center gap-2 cursor-pointer text-purple-600 dark:text-purple-400 font-medium'
                           >
                             <IconReceipt className='h-4 w-4' />
                             <span>Convert to Invoice</span>
                           </DropdownMenuItem>
-                        )}
+                        ) : q.invoiceId ? (
+                          <DropdownMenuItem asChild>
+                            <Link
+                              href={`/dashboard/invoices/${q.invoiceId}`}
+                              className='flex items-center gap-2 cursor-pointer text-blue-600 dark:text-blue-400 font-medium'
+                            >
+                              <IconReceipt className='h-4 w-4' />
+                              <span>View Invoice</span>
+                            </Link>
+                          </DropdownMenuItem>
+                        ) : null}
 
                         <DropdownMenuSeparator />
 

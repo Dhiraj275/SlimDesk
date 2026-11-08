@@ -51,11 +51,11 @@ export const quotationsApi = {
   },
 
   convertQuotation: async (quotationId: string): Promise<any> => {
-    return await api.post<any>(`/quotations/${quotationId}/convert`);
+    return await api.post<any>(`/invoices/from-quotation/${quotationId}`);
   },
 
   convertToInvoice: async (quotationId: string): Promise<any> => {
-    return await api.post<any>(`/quotations/${quotationId}/convert`);
+    return await api.post<any>(`/invoices/from-quotation/${quotationId}`);
   },
 
   deleteQuotation: async (quotationId: string): Promise<void> => {

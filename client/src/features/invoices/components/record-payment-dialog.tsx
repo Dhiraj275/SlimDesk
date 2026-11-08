@@ -278,3 +278,4 @@ export const RecordPaymentDialog: React.FC<RecordPaymentDialogProps> = ({
     </Dialog>
   );
 };
+

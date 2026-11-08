@@ -505,3 +505,4 @@ export const InvoicePdfDocument: React.FC<InvoicePdfDocumentProps> = ({
     </Document>
   );
 };
+
