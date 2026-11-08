@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { ContactsModule } from './contacts/contacts.module.js';
 import { LeadsModule } from './leads/leads.module.js';
 import { QuotationsModule } from './quotations/quotations.module.js';
+import { InvoicesModule } from './invoices/invoices.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -37,6 +38,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     ContactsModule,
     LeadsModule,
     QuotationsModule,
+    InvoicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

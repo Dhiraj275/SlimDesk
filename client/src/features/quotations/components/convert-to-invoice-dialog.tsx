@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +46,7 @@ export const ConvertToInvoiceDialog: React.FC<ConvertToInvoiceDialogProps> = ({
     }
   };
 
+  const router = useRouter();
   const [isConverting, setIsConverting] = useState(false);
 
   if (!quotation) return null;
@@ -68,6 +70,9 @@ export const ConvertToInvoiceDialog: React.FC<ConvertToInvoiceDialogProps> = ({
       );
       onSuccess(invoice);
       handleModalClose(false);
+      if (invoice?.invoiceId) {
+        router.push(`/dashboard/invoices/${invoice.invoiceId}`);
+      }
     } catch (err: any) {
       toast.error(err?.message || 'Failed to convert quotation to invoice');
     } finally {

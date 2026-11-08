@@ -24,7 +24,7 @@ import { UpdateQuotationDto } from '../dto/update-quotation.dto.js';
 import { SendQuotationDto } from '../dto/send-quotation.dto.js';
 import { QuotationFilterQueryDto } from '../dto/quotation-filter-query.dto.js';
 import { Quotation } from '../entities/quotation.entity.js';
-import { Invoice } from '../entities/invoice.entity.js';
+import { Invoice } from '../../invoices/entities/invoice.entity.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import { User } from '../../users/entities/user.entity.js';

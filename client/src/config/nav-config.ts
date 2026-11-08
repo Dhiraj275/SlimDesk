@@ -38,6 +38,14 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
+    title: 'Invoices',
+    url: '/dashboard/invoices',
+    icon: 'invoices',
+    isActive: false,
+    shortcut: ['i', 'v'],
+    items: []
+  },
+  {
     title: 'Kanban',
     url: '/dashboard/kanban',
     icon: 'kanban',

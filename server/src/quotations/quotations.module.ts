@@ -4,7 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { Quotation } from './entities/quotation.entity.js';
 import { QuotationItem } from './entities/quotation-item.entity.js';
 import { QuotationVersion } from './entities/quotation-version.entity.js';
-import { Invoice } from './entities/invoice.entity.js';
+import { Invoice } from '../invoices/entities/invoice.entity.js';
 import { QuotationsController } from './controllers/quotations.controller.js';
 import { PublicQuotationsController } from './controllers/public-quotations.controller.js';
 import { QuotationsService } from './services/quotations.service.js';

@@ -7,7 +7,7 @@ import { QuotationNumberService } from './quotation-number.service.js';
 import { Quotation } from '../entities/quotation.entity.js';
 import { QuotationItem } from '../entities/quotation-item.entity.js';
 import { QuotationVersion } from '../entities/quotation-version.entity.js';
-import { Invoice } from '../entities/invoice.entity.js';
+import { Invoice } from '../../invoices/entities/invoice.entity.js';
 import { QuotationStatus } from '../enums/quotation-status.enum.js';
 import { TaxMode } from '../enums/tax-mode.enum.js';
 

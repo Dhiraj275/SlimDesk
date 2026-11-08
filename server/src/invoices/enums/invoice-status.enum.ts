@@ -1,7 +1,6 @@
 export enum InvoiceStatus {
   DRAFT = 'draft',
-  SENT = 'sent',
-  PAID = 'paid',
-  OVERDUE = 'overdue',
+  ISSUED = 'issued',
   CANCELLED = 'cancelled',
 }
+

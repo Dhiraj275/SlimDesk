@@ -27,6 +27,7 @@ import {
   IconPhoto,
   IconPlus,
   IconProps,
+  IconReceipt2,
   IconSettings,
   IconStar,
   IconSun,
@@ -83,5 +84,6 @@ export const Icons = {
   leads: IconUsers,
   contacts: IconAddressBook,
   quotations: IconFileText,
+  invoices: IconReceipt2,
   notification: IconNotification
 };
