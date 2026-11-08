@@ -9,9 +9,16 @@ const currencyLocaleMap: Record<string, string> = {
   AED: 'en-AE',
 };
 
-export const formatCurrencyText = (currency: string = 'INR', amount: number = 0): string => {
+export const formatCurrencyText = (
+  currency: string = 'INR',
+  amount: number | string = 0
+): string => {
   const curr = (currency || 'INR').toUpperCase();
   const locale = currencyLocaleMap[curr] || 'en-IN';
+  const val =
+    typeof amount === 'number'
+      ? amount
+      : parseFloat(String(amount || 0)) || 0;
 
   try {
     return new Intl.NumberFormat(locale, {
@@ -19,12 +26,11 @@ export const formatCurrencyText = (currency: string = 'INR', amount: number = 0)
       currency: curr,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount || 0);
+    }).format(val);
   } catch {
-    return `${curr} ${(amount || 0).toLocaleString(locale, {
+    return `${curr} ${val.toLocaleString(locale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
   }
 };
-

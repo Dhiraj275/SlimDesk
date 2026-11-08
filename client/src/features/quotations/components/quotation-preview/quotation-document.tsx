@@ -1,6 +1,7 @@
 import React from 'react';
 import { Quotation, PartyInfo, QuotationItem } from '../../types/quotation.types';
 import { QuotationStatusBadge } from '../quotation-status-badge';
+import { formatAmountInWords } from '../../pdf/amount-in-words';
 import {
   IconBuilding,
   IconCalendar,
@@ -38,12 +39,13 @@ export const QuotationDocument: React.FC<QuotationDocumentProps> = ({
 }) => {
   const currencySymbol = quotation.currency === 'USD' ? '$' : '₹';
 
-  const formatCurrency = (val: number) => {
+  const formatCurrency = (val: number | string) => {
+    const num = typeof val === 'number' ? val : parseFloat(String(val || 0)) || 0;
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: quotation.currency || 'INR',
       maximumFractionDigits: 2,
-    }).format(val || 0);
+    }).format(num);
   };
 
   const formatDate = (dateStr?: string) => {
@@ -282,7 +284,7 @@ export const QuotationDocument: React.FC<QuotationDocumentProps> = ({
             </span>
           </div>
 
-          {Boolean(quotation.discountAmount && quotation.discountAmount > 0) && (
+          {Boolean(quotation.discountAmount && Number(quotation.discountAmount) > 0) && (
             <div className='flex justify-between text-zinc-600'>
               <span>Discount</span>
               <span className='font-mono font-medium text-rose-600'>
@@ -306,6 +308,15 @@ export const QuotationDocument: React.FC<QuotationDocumentProps> = ({
             </span>
             <span className='font-black text-xl text-zinc-900 font-mono tracking-tight'>
               {formatCurrency(quotation.totalAmount || 0)}
+            </span>
+          </div>
+
+          <div className='pt-2 text-right'>
+            <span className='text-[10px] uppercase font-bold tracking-wider text-zinc-500 block'>
+              Amount in words
+            </span>
+            <span className='text-xs font-semibold text-zinc-800 leading-snug'>
+              {formatAmountInWords(quotation.totalAmount || 0, quotation.currency)}
             </span>
           </div>
 

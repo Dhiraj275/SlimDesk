@@ -256,7 +256,7 @@ export const QuotationPdfDocument: React.FC<QuotationPdfDocumentProps> = ({
           {/* Table Rows */}
           {quotation.items && quotation.items.length > 0 ? (
             quotation.items.map((item, idx) => {
-              const lineTotal = item.quantity * item.unitPrice;
+              const lineTotal = Number(item.quantity || 0) * Number(item.unitPrice || 0);
               const isEven = idx % 2 === 0;
 
               return (
@@ -276,7 +276,7 @@ export const QuotationPdfDocument: React.FC<QuotationPdfDocumentProps> = ({
                     <Text style={tw('font-semibold text-primary leading-tight')}>
                       {item.description}
                     </Text>
-                    {item.discount > 0 && (
+                    {Number(item.discount || 0) > 0 && (
                       <Text style={tw('text-[7pt] text-emerald-700 mt-0.5')}>
                         Includes {item.discount}% discount
                       </Text>
@@ -366,7 +366,7 @@ export const QuotationPdfDocument: React.FC<QuotationPdfDocumentProps> = ({
             </View>
 
             {/* Overall Discount (if any) */}
-            {quotation.discountAmount > 0 && (
+            {Number(quotation.discountAmount || 0) > 0 && (
               <View style={tw('flex flex-row justify-between items-center text-[8pt]')}>
                 <Text style={tw('text-emerald-700 font-medium')}>Total Discount</Text>
                 <Text style={tw('font-mono text-emerald-700 font-semibold')}>
@@ -400,7 +400,7 @@ export const QuotationPdfDocument: React.FC<QuotationPdfDocumentProps> = ({
                   </View>
                 </>
               )
-            ) : quotation.taxAmount > 0 ? (
+            ) : Number(quotation.taxAmount || 0) > 0 ? (
               <View style={tw('flex flex-row justify-between items-center text-[8pt]')}>
                 <Text style={tw('text-muted')}>Tax Amount</Text>
                 <Text style={tw('font-mono text-secondary')}>

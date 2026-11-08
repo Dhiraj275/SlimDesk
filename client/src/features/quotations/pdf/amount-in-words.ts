@@ -1,4 +1,14 @@
-import { toWords } from 'number-to-words';
+import numberToWords from 'number-to-words';
+
+const safeToWords = (val: number): string => {
+  if (typeof numberToWords?.toWords === 'function') {
+    return numberToWords.toWords(val);
+  }
+  if (typeof (numberToWords as any)?.default?.toWords === 'function') {
+    return (numberToWords as any).default.toWords(val);
+  }
+  return String(val);
+};
 
 const CURRENCY_LABELS: Record<
   string,
@@ -40,17 +50,118 @@ const CURRENCY_LABELS: Record<
     fraction: 'Cent',
     fractionPlural: 'Cents',
   },
+  AED: {
+    whole: 'Dirham',
+    wholePlural: 'Dirhams',
+    fraction: 'Fils',
+    fractionPlural: 'Fils',
+  },
 };
 
 const titleCase = (text: string) =>
   text.replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
 
-export const formatAmountInWords = (amount: number, currency: string = 'INR'): string => {
-  if (!Number.isFinite(amount) || amount === 0) {
+/**
+ * Converts numbers into the Indian numbering system (Crores, Lakhs, Thousands, Hundreds).
+ */
+function convertNumberToIndianWords(num: number): string {
+  if (num === 0) return 'Zero';
+
+  const ones = [
+    '',
+    'One',
+    'Two',
+    'Three',
+    'Four',
+    'Five',
+    'Six',
+    'Seven',
+    'Eight',
+    'Nine',
+    'Ten',
+    'Eleven',
+    'Twelve',
+    'Thirteen',
+    'Fourteen',
+    'Fifteen',
+    'Sixteen',
+    'Seventeen',
+    'Eighteen',
+    'Nineteen',
+  ];
+
+  const tens = [
+    '',
+    '',
+    'Twenty',
+    'Thirty',
+    'Forty',
+    'Fifty',
+    'Sixty',
+    'Seventy',
+    'Eighty',
+    'Ninety',
+  ];
+
+  function convertBelowThousand(n: number): string {
+    let str = '';
+    if (n >= 100) {
+      str += ones[Math.floor(n / 100)] + ' Hundred ';
+      n %= 100;
+    }
+    if (n >= 20) {
+      str += tens[Math.floor(n / 10)] + ' ';
+      n %= 10;
+    }
+    if (n > 0) {
+      str += ones[n] + ' ';
+    }
+    return str.trim();
+  }
+
+  let result = '';
+
+  const crore = Math.floor(num / 10000000);
+  num %= 10000000;
+
+  const lakh = Math.floor(num / 100000);
+  num %= 100000;
+
+  const thousand = Math.floor(num / 1000);
+  num %= 1000;
+
+  const remainder = num;
+
+  if (crore > 0) {
+    result += convertBelowThousand(crore) + ' Crore ';
+  }
+  if (lakh > 0) {
+    result += convertBelowThousand(lakh) + ' Lakh ';
+  }
+  if (thousand > 0) {
+    result += convertBelowThousand(thousand) + ' Thousand ';
+  }
+  if (remainder > 0) {
+    result += convertBelowThousand(remainder);
+  }
+
+  return result.trim();
+}
+
+export const formatAmountInWords = (
+  amount: number | string,
+  currency: string = 'INR'
+): string => {
+  const numericAmount =
+    typeof amount === 'number'
+      ? amount
+      : parseFloat(String(amount || 0));
+
+  if (!Number.isFinite(numericAmount) || numericAmount === 0) {
     return 'Zero Only';
   }
 
-  const curr = currency.trim().toUpperCase();
+  const curr = (currency || 'INR').trim().toUpperCase();
   const labels = CURRENCY_LABELS[curr] || {
     whole: curr,
     wholePlural: curr,
@@ -58,8 +169,8 @@ export const formatAmountInWords = (amount: number, currency: string = 'INR'): s
     fractionPlural: 'Cents',
   };
 
-  const isNegative = amount < 0;
-  const absAmount = Math.abs(amount);
+  const isNegative = numericAmount < 0;
+  const absAmount = Math.abs(numericAmount);
 
   const integerPart = Math.floor(absAmount);
   const fractionPart = Math.round((absAmount - integerPart) * 100);
@@ -67,7 +178,11 @@ export const formatAmountInWords = (amount: number, currency: string = 'INR'): s
   let integerWords = '';
   if (integerPart > 0) {
     try {
-      integerWords = toWords(integerPart).replace(/[-,]/g, ' ');
+      if (curr === 'INR') {
+        integerWords = convertNumberToIndianWords(integerPart);
+      } else {
+        integerWords = titleCase(safeToWords(integerPart).replace(/[-,]/g, ' '));
+      }
     } catch {
       integerWords = String(integerPart);
     }
@@ -76,7 +191,11 @@ export const formatAmountInWords = (amount: number, currency: string = 'INR'): s
   let fractionWords = '';
   if (fractionPart > 0) {
     try {
-      fractionWords = toWords(fractionPart).replace(/[-,]/g, ' ');
+      if (curr === 'INR') {
+        fractionWords = convertNumberToIndianWords(fractionPart);
+      } else {
+        fractionWords = titleCase(safeToWords(fractionPart).replace(/[-,]/g, ' '));
+      }
     } catch {
       fractionWords = String(fractionPart);
     }
@@ -104,6 +223,5 @@ export const formatAmountInWords = (amount: number, currency: string = 'INR'): s
 
   parts.push('Only');
 
-  return titleCase(parts.join(' ').replace(/\s+/g, ' ').trim());
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
 };
-
