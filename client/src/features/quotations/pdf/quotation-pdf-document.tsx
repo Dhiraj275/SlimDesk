@@ -242,15 +242,15 @@ export const QuotationPdfDocument: React.FC<QuotationPdfDocumentProps> = ({
           {/* Table Header */}
           <View
             style={tw(
-              'flex flex-row items-center bg-primary text-white py-2 px-2.5 rounded-t text-[7.5pt] font-bold uppercase tracking-wider'
+              'flex flex-row items-center py-2 px-2.5 border-y border-borderline bg-cardbg text-[7.5pt] font-bold uppercase tracking-wider'
             )}
           >
-            <Text style={tw('w-[6%] text-center')}>#</Text>
-            <Text style={tw('w-[46%]')}>Deliverable / Description</Text>
-            <Text style={tw('w-[10%] text-center')}>Unit</Text>
-            <Text style={tw('w-[10%] text-center')}>Qty</Text>
-            <Text style={tw('w-[14%] text-right')}>Rate</Text>
-            <Text style={tw('w-[14%] text-right')}>Amount</Text>
+            <Text style={tw('w-[6%] text-center text-primary font-bold')}>#</Text>
+            <Text style={tw('w-[46%] text-primary font-bold')}>Deliverable / Description</Text>
+            <Text style={tw('w-[10%] text-center text-primary font-bold')}>Unit</Text>
+            <Text style={tw('w-[10%] text-center text-primary font-bold')}>Qty</Text>
+            <Text style={tw('w-[14%] text-right text-primary font-bold')}>Rate</Text>
+            <Text style={tw('w-[14%] text-right text-primary font-bold')}>Amount</Text>
           </View>
 
           {/* Table Rows */}
