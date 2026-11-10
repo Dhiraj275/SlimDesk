@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { Quotation } from './entities/quotation.entity.js';
 import { QuotationItem } from './entities/quotation-item.entity.js';
 import { QuotationVersion } from './entities/quotation-version.entity.js';
+import { QuotationInvoiceAllocation } from './entities/quotation-invoice-allocation.entity.js';
 import { Invoice } from '../invoices/entities/invoice.entity.js';
 import { QuotationsController } from './controllers/quotations.controller.js';
 import { PublicQuotationsController } from './controllers/public-quotations.controller.js';
@@ -17,6 +18,7 @@ import { QuotationNumberService } from './services/quotation-number.service.js';
       Quotation,
       QuotationItem,
       QuotationVersion,
+      QuotationInvoiceAllocation,
       Invoice,
     ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),

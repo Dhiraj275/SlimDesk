@@ -15,6 +15,8 @@ import { RecordRefundDialog } from './record-refund-dialog';
 import { SendInvoiceDialog } from './send-invoice-dialog';
 import { SendReminderDialog } from './send-reminder-dialog';
 import { CancelInvoiceDialog } from './cancel-invoice-dialog';
+import { PaymentReceiptDialog } from './payment-receipt-dialog';
+import { InvoiceAgingBadge } from './invoice-aging-badge';
 import { invoicesApi } from '../api/invoices.api';
 import { toast } from 'sonner';
 import {
@@ -37,6 +39,8 @@ import {
   IconEye,
   IconMail,
   IconLoader2,
+  IconCopy,
+  IconBrandWhatsapp,
 } from '@tabler/icons-react';
 import { cn } from '@/shared/utils/utils';
 
@@ -58,6 +62,7 @@ export const InvoiceDetailsView: React.FC<InvoiceDetailsViewProps> = ({
   const [isSendOpen, setIsSendOpen] = useState(false);
   const [isReminderOpen, setIsReminderOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [selectedPaymentForReceipt, setSelectedPaymentForReceipt] = useState<InvoicePayment | null>(null);
 
   const formatCurrency = (val: number | string) => {
     const num = typeof val === 'number' ? val : parseFloat(String(val || 0)) || 0;
@@ -263,6 +268,45 @@ export const InvoiceDetailsView: React.FC<InvoiceDetailsViewProps> = ({
           {/* PDF Menu */}
           <InvoicePdfActionsMenu invoice={invoice} />
 
+          {/* Copy Public Link */}
+          {!isCancelled && invoice.publicToken && (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => {
+                const publicUrl = `${window.location.origin}/invoice/${invoice.publicToken}`;
+                navigator.clipboard.writeText(publicUrl);
+                toast.success('Public invoice link copied to clipboard!');
+              }}
+              className='h-9 text-xs gap-1.5 font-medium shadow-2xs'
+              title='Copy Public Link'
+            >
+              <IconCopy className='h-3.5 w-3.5' />
+              <span className='hidden sm:inline'>Copy Link</span>
+            </Button>
+          )}
+
+          {/* WhatsApp Share */}
+          {!isCancelled && invoice.publicToken && (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => {
+                const publicUrl = `${window.location.origin}/invoice/${invoice.publicToken}`;
+                const clientName = invoice.clientInfo?.name || 'Client';
+                const formattedAmount = formatCurrency(totalAmount);
+                const message = `Hi ${clientName},\n\nHere is your invoice ${invoice.invoiceNumber} for ${formattedAmount}.\nYou can review and find payment instructions here:\n${publicUrl}\n\nThank you!`;
+                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+              }}
+              className='h-9 text-xs gap-1.5 font-medium shadow-2xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700'
+              title='Share via WhatsApp'
+            >
+              <IconBrandWhatsapp className='h-3.5 w-3.5' />
+              <span className='hidden sm:inline'>WhatsApp</span>
+            </Button>
+          )}
+
           {/* Cancel Invoice */}
           {!isCancelled && (
             <Button
@@ -320,17 +364,19 @@ export const InvoiceDetailsView: React.FC<InvoiceDetailsViewProps> = ({
               </div>
             </div>
 
-            <div className='text-left sm:text-right space-y-1'>
-              <span className='text-xs font-semibold text-foreground block'>
-                {percentage.toFixed(2)}% payment received
-              </span>
+            <div className='text-left sm:text-right space-y-1.5'>
+              <div className='flex items-center justify-start sm:justify-end gap-2'>
+                <span className='text-xs font-semibold text-foreground'>
+                  {percentage.toFixed(2)}% payment received
+                </span>
+                <InvoiceAgingBadge
+                  dueDate={invoice.dueDate}
+                  outstandingAmount={outstandingAmount}
+                  paymentStatus={invoice.paymentStatus}
+                />
+              </div>
               <span className='text-[11px] text-muted-foreground block'>
                 Due date: {formatDate(invoice.dueDate)}
-                {isOverdue && isIssued && (
-                  <span className='text-rose-600 dark:text-rose-400 font-bold ml-1'>
-                    (Overdue)
-                  </span>
-                )}
               </span>
             </div>
           </div>
@@ -454,23 +500,35 @@ export const InvoiceDetailsView: React.FC<InvoiceDetailsViewProps> = ({
                             {formatCurrency(p.amount)}
                           </td>
                           <td className='py-3 px-4 text-center'>
-                            {isCompleted ? (
+                            <div className='flex items-center justify-center gap-1.5'>
                               <Button
                                 variant='ghost'
                                 size='sm'
-                                onClick={() => {
-                                  setSelectedPaymentForRefund(p);
-                                  setIsRefundOpen(true);
-                                }}
-                                className='h-7 text-[11px] text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 font-medium'
+                                onClick={() => setSelectedPaymentForReceipt(p)}
+                                className='h-7 text-[11px] text-primary hover:text-primary hover:bg-primary/10 font-medium'
+                                title='View Official Receipt'
                               >
-                                Refund
+                                <IconReceipt2 className='h-3.5 w-3.5 mr-1' />
+                                <span>Receipt</span>
                               </Button>
-                            ) : (
-                              <span className='text-[10px] text-muted-foreground'>
-                                Refunded
-                              </span>
-                            )}
+                              {isCompleted ? (
+                                <Button
+                                  variant='ghost'
+                                  size='sm'
+                                  onClick={() => {
+                                    setSelectedPaymentForRefund(p);
+                                    setIsRefundOpen(true);
+                                  }}
+                                  className='h-7 text-[11px] text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 font-medium'
+                                >
+                                  Refund
+                                </Button>
+                              ) : (
+                                <span className='text-[10px] text-muted-foreground'>
+                                  Refunded
+                                </span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -570,6 +628,13 @@ export const InvoiceDetailsView: React.FC<InvoiceDetailsViewProps> = ({
         isOpen={isCancelOpen}
         onClose={() => setIsCancelOpen(false)}
         onSuccess={(updated) => setInvoice(updated)}
+      />
+
+      <PaymentReceiptDialog
+        invoice={invoice}
+        payment={selectedPaymentForReceipt}
+        isOpen={Boolean(selectedPaymentForReceipt)}
+        onClose={() => setSelectedPaymentForReceipt(null)}
       />
     </div>
   );

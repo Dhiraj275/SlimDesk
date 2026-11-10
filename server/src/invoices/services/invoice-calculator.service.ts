@@ -55,6 +55,8 @@ export interface InvoiceCalculationResult {
   } | null;
 }
 
+export type AgingBucket = 'current' | '1-7' | '8-30' | '31-60' | '60+';
+
 export interface ComputedPaymentState {
   paidAmount: number;
   outstandingAmount: number;
@@ -62,6 +64,9 @@ export interface ComputedPaymentState {
   paymentStatus: PaymentStatus;
   isOverdue: boolean;
   paymentPercentage: number;
+  daysOverdue: number;
+  agingBucket: AgingBucket;
+  agingLabel: string;
 }
 
 @Injectable()
@@ -238,6 +243,44 @@ export class InvoiceCalculatorService {
       paymentStatus = PaymentStatus.UNPAID;
     }
 
+    let daysOverdue = 0;
+    let agingBucket: AgingBucket = 'current';
+    let agingLabel = 'Current';
+
+    if (dueDate) {
+      const dueTime = new Date(dueDate).getTime();
+      const todayTime = new Date(todayStr).getTime();
+      const diffMs = todayTime - dueTime;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0 && outstanding.gt(0) && invoiceStatus === InvoiceStatus.ISSUED) {
+        daysOverdue = diffDays;
+        agingLabel = `Overdue by ${diffDays} day${diffDays === 1 ? '' : 's'}`;
+        if (diffDays <= 7) {
+          agingBucket = '1-7';
+        } else if (diffDays <= 30) {
+          agingBucket = '8-30';
+        } else if (diffDays <= 60) {
+          agingBucket = '31-60';
+        } else {
+          agingBucket = '60+';
+        }
+      } else if (diffDays <= 0) {
+        daysOverdue = 0;
+        agingBucket = 'current';
+        const daysRemaining = Math.abs(diffDays);
+        if (daysRemaining === 0) {
+          agingLabel = 'Due today';
+        } else {
+          agingLabel = `Due in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}`;
+        }
+      } else {
+        daysOverdue = 0;
+        agingBucket = 'current';
+        agingLabel = completedPaid.gte(total) && total.gt(0) ? 'Paid' : 'Current';
+      }
+    }
+
     return {
       paidAmount: completedPaid.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber(),
       outstandingAmount: outstanding.toNumber(),
@@ -245,6 +288,9 @@ export class InvoiceCalculatorService {
       paymentStatus,
       isOverdue,
       paymentPercentage: Math.min(100, Math.max(0, percentage)),
+      daysOverdue,
+      agingBucket,
+      agingLabel,
     };
   }
 }

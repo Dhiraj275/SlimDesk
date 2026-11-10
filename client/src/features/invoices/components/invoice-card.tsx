@@ -4,7 +4,9 @@ import React from 'react';
 import Link from 'next/link';
 import { Invoice } from '../types/invoice.types';
 import { InvoiceDualBadges } from './invoice-status-badge';
+import { InvoiceAgingBadge } from './invoice-aging-badge';
 import { Button } from '@/shared/components/ui/button';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +25,8 @@ import {
   IconCalendar,
   IconUser,
   IconAlertCircle,
+  IconCopy,
+  IconBrandWhatsapp,
 } from '@tabler/icons-react';
 import { cn } from '@/shared/utils/utils';
 
@@ -169,6 +173,35 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({
                 </DropdownMenuItem>
               )}
 
+              {invoice.publicToken && !isCancelled && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const publicUrl = `${window.location.origin}/invoice/${invoice.publicToken}`;
+                      navigator.clipboard.writeText(publicUrl);
+                      toast.success('Public link copied to clipboard!');
+                    }}
+                    className='flex items-center gap-2 cursor-pointer'
+                  >
+                    <IconCopy className='h-3.5 w-3.5 text-muted-foreground' />
+                    <span>Copy Public Link</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const publicUrl = `${window.location.origin}/invoice/${invoice.publicToken}`;
+                      const clientName = invoice.clientInfo?.name || 'Client';
+                      const message = `Hi ${clientName},\n\nHere is your invoice ${invoice.invoiceNumber} for ${formatCurrency(totalAmount)}.\nYou can review it and find payment instructions here:\n${publicUrl}\n\nThank you!`;
+                      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                    }}
+                    className='flex items-center gap-2 cursor-pointer text-emerald-600 dark:text-emerald-400'
+                  >
+                    <IconBrandWhatsapp className='h-3.5 w-3.5' />
+                    <span>Share via WhatsApp</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+
               {!isCancelled && onCancelInvoice && (
                 <>
                   <DropdownMenuSeparator />
@@ -199,22 +232,16 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({
             )}
           </div>
 
-          <div className='flex items-center justify-between text-[11px] pt-1'>
+          <div className='flex items-center justify-between text-[11px] pt-1 gap-2 flex-wrap'>
             <span className='flex items-center gap-1.5'>
               <IconCalendar className='h-3.5 w-3.5' />
               Issued: {formatDate(invoice.issueDate)}
             </span>
-            <span
-              className={cn(
-                'flex items-center gap-1 font-medium',
-                isOverdue && isIssued
-                  ? 'text-rose-600 dark:text-rose-400 font-bold'
-                  : 'text-muted-foreground'
-              )}
-            >
-              {isOverdue && isIssued && <IconAlertCircle className='h-3 w-3 shrink-0' />}
-              Due: {formatDate(invoice.dueDate)}
-            </span>
+            <InvoiceAgingBadge
+              dueDate={invoice.dueDate}
+              outstandingAmount={outstandingAmount}
+              paymentStatus={invoice.paymentStatus}
+            />
           </div>
         </div>
       </div>

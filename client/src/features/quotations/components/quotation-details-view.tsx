@@ -12,6 +12,7 @@ import { ConvertToInvoiceDialog } from './convert-to-invoice-dialog';
 import { PdfActionsMenu } from '../pdf/pdf-actions-menu';
 import { quotationsApi } from '../api/quotations.api';
 import { Quotation } from '../types/quotation.types';
+import { useSettings } from '@/features/settings/context/settings-context';
 import { toast } from 'sonner';
 import {
   IconArrowLeft,
@@ -26,6 +27,7 @@ import {
   IconCheck,
   IconExternalLink,
   IconWorld,
+  IconBrandWhatsapp,
 } from '@tabler/icons-react';
 
 interface QuotationDetailsViewProps {
@@ -39,6 +41,10 @@ export const QuotationDetailsView: React.FC<QuotationDetailsViewProps> = ({
   const [quotation, setQuotation] = useState<Quotation>(initialQuotation);
   const [isSendOpen, setIsSendOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
+
+  const { getQuotationBillingMetrics } = useSettings();
+  const { totalInvoiced, remainingBillable, percentBilled, allocations } =
+    getQuotationBillingMetrics(quotation.quotationId, Number(quotation.totalAmount) || 0);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -120,8 +126,46 @@ export const QuotationDetailsView: React.FC<QuotationDetailsViewProps> = ({
             className='h-9 text-xs gap-1.5'
           >
             <IconSend className='h-4 w-4' />
-            <span>Share Link</span>
+            <span>Send Email</span>
           </Button>
+
+          {quotation.publicToken && (
+            <>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={() => {
+                  const publicUrl = `${window.location.origin}/quote/${quotation.publicToken}`;
+                  navigator.clipboard.writeText(publicUrl);
+                  toast.success('Public proposal link copied to clipboard!');
+                }}
+                className='h-9 text-xs gap-1.5'
+                title='Copy Public Link'
+              >
+                <IconCopy className='h-4 w-4' />
+                <span className='hidden sm:inline'>Copy Link</span>
+              </Button>
+
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={() => {
+                  const publicUrl = `${window.location.origin}/quote/${quotation.publicToken}`;
+                  const clientName = quotation.clientInfo?.name || 'Client';
+                  const formattedAmount = formatCurrency(quotation.totalAmount);
+                  const message = `Hi ${clientName},\n\nHere is your commercial proposal for "${quotation.title}" (${quotation.quotationNumber}) totaling ${formattedAmount}.\nYou can review and accept it online here:\n${publicUrl}\n\nThank you!`;
+                  window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                }}
+                className='h-9 text-xs gap-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700'
+                title='Share via WhatsApp'
+              >
+                <IconBrandWhatsapp className='h-4 w-4' />
+                <span className='hidden sm:inline'>WhatsApp</span>
+              </Button>
+            </>
+          )}
 
           {!isConverted && (
             <Button asChild variant='outline' size='sm' className='h-9 text-xs gap-1.5'>
@@ -222,6 +266,85 @@ export const QuotationDetailsView: React.FC<QuotationDetailsViewProps> = ({
 
         {/* Audit & Engagement Activity Timeline (4 cols, hidden in print) */}
         <div className='lg:col-span-4 space-y-4 print:hidden'>
+          {/* Billing & Conversion Progress Card */}
+          <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
+            <CardHeader className='pb-3'>
+              <CardTitle className='text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between'>
+                <span>Invoicing & Allocations</span>
+                <span className='font-mono text-primary font-bold'>
+                  {percentBilled.toFixed(0)}% Billed
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className='space-y-3.5 text-xs'>
+              <div className='space-y-1.5'>
+                <div className='flex justify-between items-center text-muted-foreground'>
+                  <span>Invoiced to date:</span>
+                  <span className='font-mono font-semibold text-foreground'>
+                    {formatCurrency(totalInvoiced)}
+                  </span>
+                </div>
+                <div className='flex justify-between items-center text-muted-foreground'>
+                  <span>Remaining unbilled:</span>
+                  <span className='font-mono font-semibold text-emerald-600 dark:text-emerald-400'>
+                    {formatCurrency(remainingBillable)}
+                  </span>
+                </div>
+                <div className='w-full bg-muted rounded-full h-1.5 overflow-hidden mt-1'>
+                  <div
+                    className='h-full bg-primary transition-all duration-300'
+                    style={{ width: `${percentBilled}%` }}
+                  />
+                </div>
+              </div>
+
+              {allocations.length > 0 && (
+                <div className='pt-2 border-t border-border/40 space-y-2'>
+                  <span className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground block'>
+                    Generated Invoices ({allocations.length})
+                  </span>
+                  <div className='space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar'>
+                    {allocations.map((a) => (
+                      <Link
+                        key={a.id}
+                        href={`/dashboard/invoices/${a.invoiceId}`}
+                        className='flex items-center justify-between p-2 rounded-lg bg-muted/40 hover:bg-muted transition-colors border border-border/30 text-xs'
+                      >
+                        <div className='min-w-0 pr-2'>
+                          <span className='font-mono font-bold text-foreground block truncate'>
+                            {a.invoiceNumber}
+                          </span>
+                          <span className='text-[10px] text-muted-foreground capitalize truncate block'>
+                            {a.type} · {a.note}
+                          </span>
+                        </div>
+                        <span className='font-mono font-semibold text-foreground shrink-0'>
+                          {formatCurrency(a.amountInvoiced)}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {remainingBillable > 0 && (
+                <Button
+                  type='button'
+                  size='sm'
+                  onClick={() => setIsConvertOpen(true)}
+                  className='w-full h-9 text-xs gap-1.5 font-semibold bg-purple-600 hover:bg-purple-700 text-white shadow-2xs'
+                >
+                  <IconReceipt className='h-3.5 w-3.5' />
+                  <span>
+                    {totalInvoiced > 0
+                      ? 'Bill Next Milestone'
+                      : 'Convert to Invoice'}
+                  </span>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Public Portal Quick Card */}
           <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
             <CardHeader className='pb-3'>

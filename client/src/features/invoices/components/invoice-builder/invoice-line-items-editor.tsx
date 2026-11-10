@@ -11,8 +11,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/shared/components/ui/dropdown-menu';
 import { TaxMode } from '../../types/invoice.types';
 import { FormInvoiceItemInput } from '../../utils/invoice-calc';
+import { useSettings } from '@/features/settings/context/settings-context';
+import { ServiceItem } from '@/features/settings/types/settings.types';
 import {
   IconPlus,
   IconTrash,
@@ -20,6 +30,8 @@ import {
   IconArrowUp,
   IconArrowDown,
   IconLayersLinked,
+  IconBriefcase,
+  IconChevronDown,
 } from '@tabler/icons-react';
 
 interface InvoiceLineItemsEditorProps {
@@ -55,6 +67,8 @@ export const InvoiceLineItemsEditor: React.FC<InvoiceLineItemsEditorProps> = ({
   currencySymbol = '₹',
 }) => {
   const isTaxActive = taxMode !== 'none';
+  const { settings } = useSettings();
+  const catalog = settings.servicesCatalog.filter((s) => s.isActive);
 
   const addItem = () => {
     onChange([
@@ -66,6 +80,21 @@ export const InvoiceLineItemsEditor: React.FC<InvoiceLineItemsEditorProps> = ({
         unitPrice: '',
         discountAmount: 0,
         taxRate: isTaxActive ? 18 : 0,
+        sortOrder: items.length,
+      },
+    ]);
+  };
+
+  const addFromCatalog = (service: ServiceItem) => {
+    onChange([
+      ...items,
+      {
+        description: service.name + (service.description ? ` · ${service.description}` : ''),
+        quantity: 1,
+        unit: service.defaultUnit || 'units',
+        unitPrice: service.defaultUnitPrice,
+        discountAmount: 0,
+        taxRate: isTaxActive ? service.taxRate : 0,
         sortOrder: items.length,
       },
     ]);
@@ -115,7 +144,7 @@ export const InvoiceLineItemsEditor: React.FC<InvoiceLineItemsEditorProps> = ({
 
   return (
     <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
-      <CardHeader className='pb-3 flex flex-row items-center justify-between'>
+      <CardHeader className='pb-3 flex flex-row items-center justify-between flex-wrap gap-2'>
         <div className='space-y-1'>
           <CardTitle className='text-sm font-semibold flex items-center gap-2 text-foreground'>
             <IconLayersLinked className='h-4 w-4 text-primary' />
@@ -126,16 +155,56 @@ export const InvoiceLineItemsEditor: React.FC<InvoiceLineItemsEditorProps> = ({
           </p>
         </div>
 
-        <Button
-          type='button'
-          variant='outline'
-          size='sm'
-          onClick={addItem}
-          className='h-9 text-xs gap-1.5 shrink-0'
-        >
-          <IconPlus className='h-4 w-4' />
-          <span>Add Item</span>
-        </Button>
+        <div className='flex items-center gap-2'>
+          {catalog.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  className='h-9 text-xs gap-1.5 shrink-0'
+                >
+                  <IconBriefcase className='h-3.5 w-3.5 text-primary' />
+                  <span>Insert from Catalog</span>
+                  <IconChevronDown className='h-3.5 w-3.5 text-muted-foreground' />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='end' className='w-64 max-h-72 overflow-y-auto'>
+                <DropdownMenuLabel className='text-[11px] uppercase font-bold text-muted-foreground'>
+                  Services Catalog
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {catalog.map((service) => (
+                  <DropdownMenuItem
+                    key={service.id}
+                    onClick={() => addFromCatalog(service)}
+                    className='flex flex-col items-start gap-0.5 cursor-pointer py-2'
+                  >
+                    <span className='font-semibold text-xs text-foreground'>
+                      {service.name}
+                    </span>
+                    <span className='text-[10px] text-muted-foreground font-mono'>
+                      {currencySymbol}
+                      {service.defaultUnitPrice.toLocaleString('en-IN')} / {service.defaultUnit}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            onClick={addItem}
+            className='h-9 text-xs gap-1.5 shrink-0'
+          >
+            <IconPlus className='h-4 w-4' />
+            <span>Add Item</span>
+          </Button>
+        </div>
       </CardHeader>
 
       <CardContent className='p-0 sm:p-6 sm:pt-0'>
@@ -150,14 +219,16 @@ export const InvoiceLineItemsEditor: React.FC<InvoiceLineItemsEditorProps> = ({
             <p className='text-xs text-muted-foreground max-w-sm mb-4'>
               Add deliverable milestones, services, or units to build your invoice.
             </p>
-            <Button
-              type='button'
-              onClick={addItem}
-              className='h-9 text-xs gap-1.5 font-semibold'
-            >
-              <IconPlus className='h-4 w-4' />
-              <span>Add First Line Item</span>
-            </Button>
+            <div className='flex items-center gap-2'>
+              <Button
+                type='button'
+                onClick={addItem}
+                className='h-9 text-xs gap-1.5 font-semibold'
+              >
+                <IconPlus className='h-4 w-4' />
+                <span>Add First Line Item</span>
+              </Button>
+            </div>
           </div>
         ) : (
           <div className='border-t sm:border border-border/50 sm:rounded-xl overflow-hidden'>
@@ -350,7 +421,7 @@ export const InvoiceLineItemsEditor: React.FC<InvoiceLineItemsEditorProps> = ({
               </table>
             </div>
 
-            {/* Bottom table bar: Quick add button & summary */}
+            {/* Bottom table bar */}
             <div className='p-3 border-t border-border/40 bg-muted/20 flex items-center justify-between'>
               <Button
                 type='button'

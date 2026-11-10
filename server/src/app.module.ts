@@ -11,6 +11,7 @@ import { ContactsModule } from './contacts/contacts.module.js';
 import { LeadsModule } from './leads/leads.module.js';
 import { QuotationsModule } from './quotations/quotations.module.js';
 import { InvoicesModule } from './invoices/invoices.module.js';
+import { SettingsModule } from './settings/settings.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -39,6 +40,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     LeadsModule,
     QuotationsModule,
     InvoicesModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

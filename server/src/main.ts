@@ -39,6 +39,8 @@ SlimDesk is an all-in-one platform for modern freelancers to manage leads, conta
 - **Follow-up Management**: Scheduled reminders, context notes, overdue calculations, and automated status syncing.
 - **Quotations**: Commercial proposals, optional GST & flat tax calculations, snapshot versioning, public client approval portal, and invoice conversion.
 - **Invoices & Billing**: Independent billing, quotation conversion, multi-method payment recording (UPI, bank transfer, cash), separate lifecycle & payment progress statuses, chronological event timeline, and payment reminders.
+- **Settings & Document Defaults**: Reusable business identity, branding, GSTIN, payment profiles (bank accounts/UPI), services catalog, terms/notes library, and sequential numbering.
+- **Payment Receipts**: Official receipts (RCT-YYYY-001) generated for completed payments with client shareable links.
 - **Activity Timeline**: Full chronological event history capturing calls, meetings, notes, quotes, status transitions, and client conversions.
 - **Dashboard Metrics**: Real-time pipeline counters and actionable follow-up indicators.
 
@@ -80,6 +82,18 @@ Authorization: Bearer <your_jwt_token>
     .addTag(
       'Public Invoices',
       'Unauthenticated client portal for reviewing issued invoices, bank/UPI payment instructions, and receipts.',
+    )
+    .addTag(
+      'Settings & Document Defaults',
+      'Reusable business profile identity, branding, GSTIN, payment profiles, services catalog, snippet library, and number sequences.',
+    )
+    .addTag(
+      'Receipts',
+      'Sequential payment receipt management, history, and generation for completed invoice payments.',
+    )
+    .addTag(
+      'Public Receipts',
+      'Unauthenticated client portal for viewing payment receipts and acknowledgements.',
     )
     .addBearerAuth(
       {

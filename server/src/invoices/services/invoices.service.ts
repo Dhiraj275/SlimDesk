@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,6 +12,7 @@ import { Invoice } from '../entities/invoice.entity.js';
 import { InvoiceItem } from '../entities/invoice-item.entity.js';
 import { InvoicePayment } from '../entities/invoice-payment.entity.js';
 import { InvoiceEvent } from '../entities/invoice-event.entity.js';
+import { PaymentReceipt } from '../entities/payment-receipt.entity.js';
 import { InvoiceStatus } from '../enums/invoice-status.enum.js';
 import { PaymentStatus } from '../enums/payment-status.enum.js';
 import { PaymentRecordStatus } from '../enums/payment-record-status.enum.js';
@@ -18,6 +20,10 @@ import { InvoiceEventType } from '../enums/invoice-event-type.enum.js';
 import { TaxMode } from '../../quotations/enums/tax-mode.enum.js';
 import { Quotation } from '../../quotations/entities/quotation.entity.js';
 import { QuotationStatus } from '../../quotations/enums/quotation-status.enum.js';
+import { QuotationInvoiceAllocation } from '../../quotations/entities/quotation-invoice-allocation.entity.js';
+import { ConversionBillingType } from '../../quotations/enums/conversion-billing-type.enum.js';
+import { SettingsService } from '../../settings/services/settings.service.js';
+import { DocumentType } from '../../settings/enums/document-type.enum.js';
 import {
   InvoiceCalculatorService,
   ComputedPaymentState,
@@ -25,6 +31,8 @@ import {
 import { InvoiceNumberService } from './invoice-number.service.js';
 import { CreateInvoiceDto } from '../dto/create-invoice.dto.js';
 import { UpdateInvoiceDto } from '../dto/update-invoice.dto.js';
+import { ConvertQuotationDto } from '../dto/convert-quotation.dto.js';
+import { GenerateReceiptDto } from '../dto/generate-receipt.dto.js';
 import { RecordPaymentDto } from '../dto/record-payment.dto.js';
 import { RecordRefundDto } from '../dto/record-refund.dto.js';
 import { SendInvoiceDto } from '../dto/send-invoice.dto.js';
@@ -34,6 +42,7 @@ import { InvoiceFilterQueryDto } from '../dto/invoice-filter-query.dto.js';
 import {
   InvoiceResponseDto,
   InvoiceMetricsDto,
+  OverdueAgingBreakdownDto,
 } from '../dto/invoice-response.dto.js';
 
 @Injectable()
@@ -49,8 +58,14 @@ export class InvoicesService {
     private readonly eventRepository: Repository<InvoiceEvent>,
     @InjectRepository(Quotation)
     private readonly quotationRepository: Repository<Quotation>,
+    @InjectRepository(QuotationInvoiceAllocation)
+    private readonly allocationRepository: Repository<QuotationInvoiceAllocation>,
+    @InjectRepository(PaymentReceipt)
+    private readonly receiptRepository: Repository<PaymentReceipt>,
     private readonly calculator: InvoiceCalculatorService,
     private readonly numberService: InvoiceNumberService,
+    @Optional()
+    private readonly settingsService?: SettingsService,
   ) {}
 
   async create(userId: string, dto: CreateInvoiceDto): Promise<InvoiceResponseDto> {
@@ -128,21 +143,8 @@ export class InvoicesService {
   async createFromQuotation(
     userId: string,
     quotationId: string,
+    dto?: ConvertQuotationDto,
   ): Promise<InvoiceResponseDto> {
-    // Idempotent conversion check
-    const existing = await this.invoiceRepository.findOne({
-      where: { quotationId, userId },
-      relations: {
-        items: true,
-        payments: true,
-        events: true,
-      },
-    });
-
-    if (existing) {
-      return this.decorateInvoice(existing);
-    }
-
     const quotation = await this.quotationRepository.findOne({
       where: { quotationId, userId },
       relations: { items: true },
@@ -152,20 +154,178 @@ export class InvoicesService {
       throw new NotFoundException(`Quotation ${quotationId} not found`);
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const dueDateStr = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split('T')[0];
+    if (
+      quotation.status === QuotationStatus.REJECTED ||
+      quotation.status === QuotationStatus.CANCELLED
+    ) {
+      throw new BadRequestException(
+        `Cannot create invoice from quotation in ${quotation.status} state`,
+      );
+    }
 
-    const invoiceItems = (quotation.items || []).map((item, idx) => ({
-      description: item.description,
-      quantity: Number(item.quantity) || 1,
-      unit: item.unit || 'units',
-      unitPrice: Number(item.unitPrice) || 0,
-      discountAmount: Number(item.discount) || 0,
-      taxRate: Number(item.taxRate) || 0,
-      sortOrder: item.sortOrder ?? idx,
-    }));
+    const totalQuotationAmount = new Decimal(
+      quotation.totalAmount ||
+        quotation.items?.reduce(
+          (s, it) =>
+            s + Number(it.unitPrice || 0) * Number(it.quantity || 1),
+          0,
+        ) ||
+        0,
+    );
+
+    const existingAllocations = await this.allocationRepository.find({
+      where: { quotationId, userId },
+    });
+
+    const totalAlreadyInvoiced = existingAllocations.reduce(
+      (acc, a) => acc.add(new Decimal(a.allocatedAmount || 0)),
+      new Decimal(0),
+    );
+
+    const remainingBillable = Decimal.max(
+      0,
+      totalQuotationAmount.sub(totalAlreadyInvoiced),
+    );
+
+    if (remainingBillable.isZero()) {
+      throw new BadRequestException('Quotation has already been fully invoiced');
+    }
+
+    const billingType = dto?.billingType || ConversionBillingType.FULL;
+    let billAmount: Decimal;
+    let allocationPercentage: number | null = null;
+
+    if (billingType === ConversionBillingType.FULL) {
+      billAmount = remainingBillable;
+      allocationPercentage = totalQuotationAmount.gt(0)
+        ? remainingBillable
+            .div(totalQuotationAmount)
+            .mul(100)
+            .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+            .toNumber()
+        : 100;
+    } else if (billingType === ConversionBillingType.PERCENTAGE) {
+      const pct = Number(dto?.percentage);
+      if (!pct || pct <= 0 || pct > 100) {
+        throw new BadRequestException(
+          'Percentage must be between 0.01 and 100',
+        );
+      }
+      allocationPercentage = pct;
+      billAmount = totalQuotationAmount
+        .mul(pct)
+        .div(100)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+    } else if (billingType === ConversionBillingType.CUSTOM) {
+      const customAmt = Number(dto?.customAmount);
+      if (!customAmt || customAmt <= 0) {
+        throw new BadRequestException(
+          'Custom amount must be greater than 0',
+        );
+      }
+      billAmount = new Decimal(customAmt).toDecimalPlaces(
+        2,
+        Decimal.ROUND_HALF_UP,
+      );
+      allocationPercentage = totalQuotationAmount.gt(0)
+        ? billAmount
+            .div(totalQuotationAmount)
+            .mul(100)
+            .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+            .toNumber()
+        : null;
+    } else {
+      throw new BadRequestException(`Unsupported billing type: ${billingType}`);
+    }
+
+    if (billAmount.gt(remainingBillable)) {
+      throw new BadRequestException(
+        `Requested billing amount (${billAmount.toFixed(2)}) exceeds remaining billable quotation balance (${remainingBillable.toFixed(2)})`,
+      );
+    }
+
+    const isFullInitialInvoice =
+      billingType === ConversionBillingType.FULL &&
+      totalAlreadyInvoiced.isZero();
+    let invoiceItems: CreateInvoiceDto['items'];
+    let discountAmount = 0;
+    let taxMode = TaxMode.NONE;
+
+    if (
+      isFullInitialInvoice &&
+      quotation.items &&
+      quotation.items.length > 0
+    ) {
+      invoiceItems = quotation.items.map((item, idx) => ({
+        description: item.description,
+        quantity: Number(item.quantity) || 1,
+        unit: item.unit || 'units',
+        unitPrice: Number(item.unitPrice) || 0,
+        discountAmount: Number(item.discount) || 0,
+        taxRate: Number(item.taxRate) || 0,
+        sortOrder: item.sortOrder ?? idx,
+      }));
+      discountAmount = Number(quotation.discountAmount) || 0;
+      taxMode = quotation.taxMode || TaxMode.NONE;
+    } else {
+      let lineDesc = dto?.notes;
+      if (!lineDesc) {
+        if (billingType === ConversionBillingType.PERCENTAGE) {
+          lineDesc = `Advance payment (${dto?.percentage}%) for Quotation ${quotation.quotationNumber}: ${quotation.title || 'Services'}`;
+        } else if (
+          totalAlreadyInvoiced.gt(0) &&
+          billAmount.equals(remainingBillable)
+        ) {
+          lineDesc = `Final balance payment for Quotation ${quotation.quotationNumber}: ${quotation.title || 'Services'}`;
+        } else {
+          lineDesc = `Milestone payment for Quotation ${quotation.quotationNumber}: ${quotation.title || 'Services'}`;
+        }
+      }
+      invoiceItems = [
+        {
+          description: lineDesc,
+          quantity: 1,
+          unit: 'milestone',
+          unitPrice: billAmount.toNumber(),
+          discountAmount: 0,
+          taxRate: 0,
+          sortOrder: 0,
+        },
+      ];
+      discountAmount = 0;
+      taxMode = TaxMode.NONE;
+    }
+
+    let paymentDetails = quotation.paymentSchedule;
+    if (dto?.paymentProfileId && this.settingsService) {
+      try {
+        const profiles = await this.settingsService.getPaymentProfiles(userId);
+        const chosen = profiles.find(
+          (p) => p.paymentProfileId === dto.paymentProfileId,
+        );
+        if (chosen) {
+          if (chosen.type === 'upi') {
+            paymentDetails = `UPI: ${chosen.details?.upiId || ''} (${chosen.details?.accountHolderName || ''})`;
+          } else if (chosen.type === 'bank_transfer') {
+            paymentDetails = `Bank: ${chosen.details?.bankName || ''} | A/C: ${chosen.details?.accountNumber || ''} | IFSC: ${chosen.details?.ifscCode || ''}`;
+          } else if (chosen.details?.instructions) {
+            paymentDetails = chosen.details.instructions;
+          }
+          if (chosen.instructions) {
+            paymentDetails += `\n${chosen.instructions}`;
+          }
+        }
+      } catch {
+        // Fallback to quotation payment schedule
+      }
+    }
+
+    const todayStr = dto?.issueDate || new Date().toISOString().split('T')[0];
+    const dueDateStr =
+      dto?.dueDate ||
+      new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0];
 
     const invoiceDto: CreateInvoiceDto = {
       title: quotation.title || 'Services Rendered',
@@ -174,35 +334,58 @@ export class InvoicesService {
       currency: quotation.currency || 'INR',
       issueDate: todayStr,
       dueDate: dueDateStr,
-      taxMode: quotation.taxMode,
-      discountAmount: Number(quotation.discountAmount) || 0,
+      taxMode,
+      discountAmount,
       freelancerInfo: quotation.freelancerInfo as any,
       clientInfo: quotation.clientInfo as any,
       paymentDetails:
-        quotation.paymentSchedule ||
+        paymentDetails ||
         'Bank Transfer / UPI payment details will be provided.',
       terms:
         quotation.terms ||
         'Payment due within 14 days of invoice issuance. Late fee applies past due date.',
       notes:
+        dto?.notes ||
         quotation.notes ||
-        `Converted from accepted quotation ${quotation.quotationNumber}.`,
+        `Converted from quotation ${quotation.quotationNumber}.`,
       items: invoiceItems,
     };
 
     const invoice = await this.create(userId, invoiceDto);
 
-    // Update quotation status to CONVERTED
-    quotation.status = QuotationStatus.CONVERTED;
-    quotation.convertedAt = new Date();
+    const allocation = this.allocationRepository.create({
+      quotationId: quotation.quotationId,
+      invoiceId: invoice.invoiceId,
+      userId,
+      allocatedAmount: billAmount.toNumber(),
+      billingType,
+      percentage: allocationPercentage,
+      notes: dto?.notes || null,
+    });
+    await this.allocationRepository.save(allocation);
+
+    const newTotalInvoiced = totalAlreadyInvoiced.add(billAmount);
+    const newRemaining = Decimal.max(0, totalQuotationAmount.sub(newTotalInvoiced));
+
+    if (newRemaining.isZero()) {
+      quotation.status = QuotationStatus.CONVERTED;
+      quotation.convertedAt = new Date();
+    } else {
+      quotation.status = QuotationStatus.ACCEPTED;
+    }
     quotation.invoiceId = invoice.invoiceId;
     await this.quotationRepository.save(quotation);
 
     await this.logEvent(
       invoice.invoiceId,
       InvoiceEventType.CREATED,
-      `Generated from quotation ${quotation.quotationNumber}`,
-      { quotationId: quotation.quotationId, quotationNumber: quotation.quotationNumber },
+      `Generated from quotation ${quotation.quotationNumber} (${billingType}: ${invoice.currency} ${billAmount.toNumber()})`,
+      {
+        quotationId: quotation.quotationId,
+        quotationNumber: quotation.quotationNumber,
+        billingType,
+        allocatedAmount: billAmount.toNumber(),
+      },
     );
 
     return invoice;
@@ -305,12 +488,27 @@ export class InvoicesService {
       paidCount: 0,
       partiallyPaidCount: 0,
       unpaidCount: 0,
+      overdueAgingBreakdown: {
+        current: { count: 0, amount: 0 },
+        days1to7: { count: 0, amount: 0 },
+        days8to30: { count: 0, amount: 0 },
+        days31to60: { count: 0, amount: 0 },
+        days60plus: { count: 0, amount: 0 },
+      },
     };
 
     let totalInvoicedDec = new Decimal(0);
     let totalReceivedDec = new Decimal(0);
     let totalOutstandingDec = new Decimal(0);
     let totalOverdueDec = new Decimal(0);
+
+    const aging: OverdueAgingBreakdownDto = {
+      current: { count: 0, amount: 0 },
+      days1to7: { count: 0, amount: 0 },
+      days8to30: { count: 0, amount: 0 },
+      days31to60: { count: 0, amount: 0 },
+      days60plus: { count: 0, amount: 0 },
+    };
 
     for (const inv of invoices) {
       const state = this.calculator.computePaymentState(
@@ -340,6 +538,26 @@ export class InvoicesService {
               new Decimal(state.outstandingAmount || 0),
             );
           }
+
+          if (state.outstandingAmount > 0) {
+            const outAmt = Number(state.outstandingAmount);
+            if (state.agingBucket === 'current') {
+              aging.current.count += 1;
+              aging.current.amount = new Decimal(aging.current.amount).add(outAmt).toNumber();
+            } else if (state.agingBucket === '1-7') {
+              aging.days1to7.count += 1;
+              aging.days1to7.amount = new Decimal(aging.days1to7.amount).add(outAmt).toNumber();
+            } else if (state.agingBucket === '8-30') {
+              aging.days8to30.count += 1;
+              aging.days8to30.amount = new Decimal(aging.days8to30.amount).add(outAmt).toNumber();
+            } else if (state.agingBucket === '31-60') {
+              aging.days31to60.count += 1;
+              aging.days31to60.amount = new Decimal(aging.days31to60.amount).add(outAmt).toNumber();
+            } else if (state.agingBucket === '60+') {
+              aging.days60plus.count += 1;
+              aging.days60plus.amount = new Decimal(aging.days60plus.amount).add(outAmt).toNumber();
+            }
+          }
         }
 
         // Payment status counts
@@ -355,6 +573,7 @@ export class InvoicesService {
     metrics.totalReceived = totalReceivedDec.toNumber();
     metrics.totalOutstanding = totalOutstandingDec.toNumber();
     metrics.totalOverdue = totalOverdueDec.toNumber();
+    metrics.overdueAgingBreakdown = aging;
 
     return metrics;
   }
@@ -721,6 +940,180 @@ export class InvoicesService {
     return this.decorateInvoice(invoice);
   }
 
+  // --- Communication, Sharing & Receipts ---
+
+  async getShareInfo(userId: string, invoiceId: string) {
+    const invoice = await this.findOne(userId, invoiceId);
+    return this.buildInvoiceSharePayload(invoice);
+  }
+
+  async regeneratePublicToken(userId: string, invoiceId: string) {
+    const invoice = await this.invoiceRepository.findOne({
+      where: { invoiceId, userId },
+    });
+    if (!invoice) {
+      throw new NotFoundException(`Invoice ${invoiceId} not found`);
+    }
+
+    invoice.publicToken = randomUUID();
+    const saved = await this.invoiceRepository.save(invoice);
+
+    await this.logEvent(
+      invoiceId,
+      InvoiceEventType.SHARED,
+      'Public access link regenerated and previous token revoked',
+      { publicToken: saved.publicToken },
+    );
+
+    return this.buildInvoiceSharePayload(saved);
+  }
+
+  private buildInvoiceSharePayload(invoice: Invoice) {
+    const appUrl = process.env.APP_URL || 'https://app.slimdesk.com';
+    const publicUrl = `${appUrl}/invoices/public/${invoice.publicToken}`;
+    const clientName =
+      invoice.clientInfo?.name || invoice.clientInfo?.company || 'Client';
+    const freelancerName =
+      invoice.freelancerInfo?.name ||
+      invoice.freelancerInfo?.company ||
+      'Freelancer';
+    const clientPhone =
+      invoice.clientInfo?.phone?.replace(/[^0-9]/g, '') || '';
+
+    const suggestedMessage = `Hi ${clientName}, here is invoice ${invoice.invoiceNumber} for ${invoice.currency} ${Number(invoice.totalAmount).toLocaleString('en-IN')} from ${freelancerName}. You can view and pay it securely here: ${publicUrl}`;
+
+    const phoneParam = clientPhone ? `phone=${clientPhone}&` : '';
+    const whatsappUrl = `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(suggestedMessage)}`;
+
+    return {
+      publicUrl,
+      publicToken: invoice.publicToken,
+      whatsappUrl,
+      suggestedMessage,
+    };
+  }
+
+  async generateReceipt(
+    userId: string,
+    invoiceId: string,
+    paymentId: string,
+    dto?: GenerateReceiptDto,
+  ): Promise<PaymentReceipt> {
+    const invoice = await this.invoiceRepository.findOne({
+      where: { invoiceId, userId },
+    });
+    if (!invoice) {
+      throw new NotFoundException(`Invoice ${invoiceId} not found`);
+    }
+
+    const payment = await this.paymentRepository.findOne({
+      where: { paymentId, invoiceId, userId },
+    });
+    if (!payment) {
+      throw new NotFoundException(`Payment transaction ${paymentId} not found`);
+    }
+
+    if (payment.status !== PaymentRecordStatus.COMPLETED) {
+      throw new BadRequestException(
+        `Receipts can only be generated for completed payments. Current payment status: ${payment.status}`,
+      );
+    }
+
+    const existingReceipt = await this.receiptRepository.findOne({
+      where: { paymentId, userId },
+    });
+    if (existingReceipt) {
+      return existingReceipt;
+    }
+
+    let receiptNumber: string;
+    if (this.settingsService) {
+      receiptNumber = await this.settingsService.generateNextDocumentNumber(
+        userId,
+        DocumentType.RECEIPT,
+        payment.paymentDate,
+      );
+    } else {
+      const year = payment.paymentDate
+        ? new Date(payment.paymentDate).getFullYear()
+        : new Date().getFullYear();
+      receiptNumber = `RCT-${year}-${String(Math.floor(Math.random() * 900) + 100)}`;
+    }
+
+    const receipt = this.receiptRepository.create({
+      userId,
+      paymentId,
+      invoiceId,
+      receiptNumber,
+      receiptDate: payment.paymentDate || new Date().toISOString().split('T')[0],
+      amountReceived: Number(payment.amount),
+      currency: invoice.currency || 'INR',
+      paymentMethod: payment.paymentMethod,
+      referenceNumber: payment.referenceNumber || null,
+      clientInfo: invoice.clientInfo || null,
+      freelancerInfo: invoice.freelancerInfo || null,
+      notes: dto?.notes || payment.notes || 'Payment received with thanks.',
+      publicToken: randomUUID(),
+    });
+
+    const saved = await this.receiptRepository.save(receipt);
+
+    await this.logEvent(
+      invoiceId,
+      InvoiceEventType.PAYMENT_RECORDED,
+      `Payment receipt ${saved.receiptNumber} generated for payment of ${saved.currency} ${saved.amountReceived}`,
+      { receiptId: saved.receiptId, receiptNumber: saved.receiptNumber },
+    );
+
+    return saved;
+  }
+
+  async getReceiptsForInvoice(
+    userId: string,
+    invoiceId: string,
+  ): Promise<PaymentReceipt[]> {
+    return this.receiptRepository.find({
+      where: { invoiceId, userId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getAllReceipts(userId: string): Promise<PaymentReceipt[]> {
+    return this.receiptRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getReceiptById(
+    userId: string,
+    receiptId: string,
+  ): Promise<PaymentReceipt> {
+    const receipt = await this.receiptRepository.findOne({
+      where: { receiptId, userId },
+    });
+    if (!receipt) {
+      throw new NotFoundException(`Payment receipt ${receiptId} not found`);
+    }
+    return receipt;
+  }
+
+  async findByPublicReceiptToken(token: string): Promise<PaymentReceipt> {
+    const receipt = await this.receiptRepository.findOne({
+      where: { publicToken: token },
+    });
+    if (!receipt) {
+      throw new NotFoundException('Payment receipt not found or link has expired');
+    }
+
+    if (!receipt.viewedAt) {
+      receipt.viewedAt = new Date();
+      await this.receiptRepository.save(receipt);
+    }
+
+    return receipt;
+  }
+
   // --- Private Helpers ---
 
   private decorateInvoice(invoice: Invoice): InvoiceResponseDto {
@@ -738,6 +1131,9 @@ export class InvoicesService {
       paymentStatus: state.paymentStatus,
       isOverdue: state.isOverdue,
       paymentPercentage: state.paymentPercentage,
+      daysOverdue: state.daysOverdue,
+      agingBucket: state.agingBucket,
+      agingLabel: state.agingLabel,
     });
   }
 

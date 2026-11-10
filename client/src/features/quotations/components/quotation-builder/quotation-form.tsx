@@ -29,6 +29,7 @@ import {
   TaxMode,
   PartyInfo,
 } from '../../types/quotation.types';
+import { useSettings } from '@/features/settings/context/settings-context';
 import { toast } from 'sonner';
 import {
   IconFileText,
@@ -180,6 +181,39 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
   // UI state
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { settings } = useSettings();
+
+  // Snapshot defaults from settings when creating a brand new quotation
+  useEffect(() => {
+    if (!initialData) {
+      if (settings.businessProfile?.businessName) {
+        setFreelancerInfo((prev) => ({
+          ...prev,
+          name: settings.businessProfile.businessName,
+          businessName:
+            settings.businessProfile.legalName ||
+            settings.businessProfile.businessName,
+          email: settings.businessProfile.email || prev.email,
+          phone: settings.businessProfile.phone || prev.phone,
+          address: settings.businessProfile.address || prev.address,
+          gstin: settings.businessProfile.gstin || prev.gstin,
+          state: settings.businessProfile.state || prev.state,
+        }));
+      }
+      if (settings.financialDefaults?.defaultCurrency) {
+        setCurrency(settings.financialDefaults.defaultCurrency);
+      }
+      if (settings.financialDefaults?.defaultTaxMode) {
+        setTaxMode(settings.financialDefaults.defaultTaxMode);
+      }
+      if (settings.financialDefaults?.defaultDueDateDays) {
+        const d = new Date();
+        d.setDate(d.getDate() + settings.financialDefaults.defaultDueDateDays);
+        setExpiryDate(d.toISOString().split('T')[0]);
+      }
+    }
+  }, [initialData]);
 
   // Load existing contacts for dropdown
   useEffect(() => {
@@ -445,6 +479,28 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                       onChange={(e) => setExpiryDate(e.target.value)}
                       className='h-10 text-xs'
                     />
+                    <div className='flex items-center gap-1 flex-wrap pt-0.5'>
+                      <span className='text-[10px] text-muted-foreground mr-0.5'>Presets:</span>
+                      {[
+                        { label: '+7d', days: 7 },
+                        { label: '+14d', days: 14 },
+                        { label: '+30d', days: 30 },
+                        { label: '+60d', days: 60 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.days}
+                          type='button'
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + preset.days);
+                            setExpiryDate(d.toISOString().split('T')[0]);
+                          }}
+                          className='px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40 transition-colors'
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </CardContent>

@@ -14,6 +14,7 @@ import {
 import { QuotationStatusBadge } from './quotation-status-badge';
 import { Quotation } from '../types/quotation.types';
 import { downloadQuotationPdf } from '../pdf/pdf-actions-manager';
+import { toast } from 'sonner';
 import {
   IconDotsVertical,
   IconEye,
@@ -25,6 +26,7 @@ import {
   IconCalendar,
   IconBuilding,
   IconDownload,
+  IconBrandWhatsapp,
 } from '@tabler/icons-react';
 
 interface QuotationCardProps {
@@ -137,6 +139,35 @@ export const QuotationCard: React.FC<QuotationCardProps> = ({
                 <IconSend className='h-4 w-4' />
                 <span>Share Link</span>
               </DropdownMenuItem>
+
+              {quotation.publicToken && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const publicUrl = `${window.location.origin}/quote/${quotation.publicToken}`;
+                      navigator.clipboard.writeText(publicUrl);
+                      toast.success('Public quote link copied to clipboard!');
+                    }}
+                    className='flex items-center gap-2 cursor-pointer'
+                  >
+                    <IconCopy className='h-4 w-4 text-muted-foreground' />
+                    <span>Copy Public Link</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const publicUrl = `${window.location.origin}/quote/${quotation.publicToken}`;
+                      const clientName = quotation.clientInfo?.name || 'Client';
+                      const message = `Hi ${clientName},\n\nHere is your commercial proposal for "${quotation.title}" (${quotation.quotationNumber}).\nYou can review and accept it online here:\n${publicUrl}\n\nThank you!`;
+                      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                    }}
+                    className='flex items-center gap-2 cursor-pointer text-emerald-600 dark:text-emerald-400'
+                  >
+                    <IconBrandWhatsapp className='h-4 w-4' />
+                    <span>Share via WhatsApp</span>
+                  </DropdownMenuItem>
+                </>
+              )}
 
               <DropdownMenuItem
                 onClick={() => onDuplicate(quotation)}

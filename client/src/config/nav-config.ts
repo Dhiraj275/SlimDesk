@@ -54,6 +54,14 @@ export const navItems: NavItem[] = [
     items: []
   },
   {
+    title: 'Settings',
+    url: '/dashboard/settings',
+    icon: 'settings',
+    isActive: false,
+    shortcut: ['s', 't'],
+    items: []
+  },
+  {
     title: 'Account',
     url: '#',
     icon: 'account',

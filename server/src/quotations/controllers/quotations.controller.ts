@@ -143,6 +143,48 @@ export class QuotationsController {
     return this.quotationsService.convert(user.userId, id);
   }
 
+  @Get(':id/billing-summary')
+  @ApiOperation({
+    summary: 'Get quotation billing and conversion summary',
+    description:
+      'Returns total quotation amount, invoiced amount across partial milestones, remaining billable balance, and allocation history.',
+  })
+  @ApiParam({ name: 'id', description: 'Quotation UUID' })
+  getBillingSummary(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ) {
+    return this.quotationsService.getBillingSummary(user.userId, id);
+  }
+
+  @Get(':id/share')
+  @ApiOperation({
+    summary: 'Get share link and WhatsApp click-to-chat payload',
+    description:
+      'Generates secure public link, prefilled WhatsApp message with client greeting and quotation summary.',
+  })
+  @ApiParam({ name: 'id', description: 'Quotation UUID' })
+  getShareInfo(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ) {
+    return this.quotationsService.getShareInfo(user.userId, id);
+  }
+
+  @Post(':id/regenerate-token')
+  @ApiOperation({
+    summary: 'Regenerate quotation public token',
+    description:
+      'Revokes the previous public link and creates a new secure unguessable access token.',
+  })
+  @ApiParam({ name: 'id', description: 'Quotation UUID' })
+  regenerateToken(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ) {
+    return this.quotationsService.regeneratePublicToken(user.userId, id);
+  }
+
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete quotation draft',

@@ -25,12 +25,15 @@ import { RecordRefundDto } from '../dto/record-refund.dto.js';
 import { SendInvoiceDto } from '../dto/send-invoice.dto.js';
 import { SendReminderDto } from '../dto/send-reminder.dto.js';
 import { CancelInvoiceDto } from '../dto/cancel-invoice.dto.js';
+import { ConvertQuotationDto } from '../dto/convert-quotation.dto.js';
+import { GenerateReceiptDto } from '../dto/generate-receipt.dto.js';
 import { InvoiceFilterQueryDto } from '../dto/invoice-filter-query.dto.js';
 import {
   InvoiceResponseDto,
   InvoiceMetricsDto,
 } from '../dto/invoice-response.dto.js';
 import { InvoicePayment } from '../entities/invoice-payment.entity.js';
+import { PaymentReceipt } from '../entities/payment-receipt.entity.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
 import { User } from '../../users/entities/user.entity.js';
@@ -64,16 +67,18 @@ export class InvoicesController {
   @ApiOperation({
     summary: 'Convert accepted quotation into invoice draft',
     description:
-      'Copies line items, pricing, tax configuration, and client details from an accepted quotation into a new draft invoice for freelancer review.',
+      'Creates an invoice from an accepted quotation. Supports full billing, percentage-based advance (e.g. 50%), or custom milestone amounts with overbilling prevention.',
   })
   @ApiParam({ name: 'quotationId', description: 'Originating Quotation UUID' })
   @ApiResponse({ status: 201, description: 'Invoice draft generated from quotation', type: InvoiceResponseDto })
+  @ApiResponse({ status: 400, description: 'Overbilling or invalid billing parameters' })
   @ApiResponse({ status: 404, description: 'Quotation not found' })
   createFromQuotation(
     @CurrentUser() user: User,
     @Param('quotationId') quotationId: string,
+    @Body() dto?: ConvertQuotationDto,
   ): Promise<InvoiceResponseDto> {
-    return this.invoicesService.createFromQuotation(user.userId, quotationId);
+    return this.invoicesService.createFromQuotation(user.userId, quotationId, dto);
   }
 
   @Get()
@@ -239,6 +244,67 @@ export class InvoicesController {
     @Body() dto: SendReminderDto,
   ) {
     return this.invoicesService.remind(user.userId, id, dto);
+  }
+
+  @Get(':id/share')
+  @ApiOperation({
+    summary: 'Get share link and WhatsApp click-to-chat payload for invoice',
+    description:
+      'Generates secure public link, prefilled WhatsApp message with client greeting and invoice summary.',
+  })
+  @ApiParam({ name: 'id', description: 'Invoice UUID' })
+  getShareInfo(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ) {
+    return this.invoicesService.getShareInfo(user.userId, id);
+  }
+
+  @Post(':id/regenerate-token')
+  @ApiOperation({
+    summary: 'Regenerate invoice public token',
+    description:
+      'Revokes the previous public link and creates a new secure unguessable access token.',
+  })
+  @ApiParam({ name: 'id', description: 'Invoice UUID' })
+  regenerateToken(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ) {
+    return this.invoicesService.regeneratePublicToken(user.userId, id);
+  }
+
+  @Post(':id/payments/:paymentId/receipt')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Generate payment receipt for a completed payment',
+    description:
+      'Generates a sequential payment receipt (RCT-YYYY-001) for an invoice payment transaction.',
+  })
+  @ApiParam({ name: 'id', description: 'Invoice UUID' })
+  @ApiParam({ name: 'paymentId', description: 'Payment transaction UUID' })
+  @ApiResponse({ status: 201, description: 'Receipt generated', type: PaymentReceipt })
+  generateReceipt(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Param('paymentId') paymentId: string,
+    @Body() dto?: GenerateReceiptDto,
+  ): Promise<PaymentReceipt> {
+    return this.invoicesService.generateReceipt(user.userId, id, paymentId, dto);
+  }
+
+  @Get(':id/receipts')
+  @ApiOperation({
+    summary: 'List payment receipts for invoice',
+    description: 'Returns all generated payment receipts for this invoice.',
+  })
+  @ApiParam({ name: 'id', description: 'Invoice UUID' })
+  @ApiResponse({ status: 200, type: [PaymentReceipt] })
+  getReceiptsForInvoice(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ): Promise<PaymentReceipt[]> {
+    return this.invoicesService.getReceiptsForInvoice(user.userId, id);
   }
 
   @Post(':id/cancel')

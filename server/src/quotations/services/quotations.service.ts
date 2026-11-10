@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { Quotation } from '../entities/quotation.entity.js';
 import { QuotationItem } from '../entities/quotation-item.entity.js';
 import { QuotationVersion } from '../entities/quotation-version.entity.js';
+import { QuotationInvoiceAllocation } from '../entities/quotation-invoice-allocation.entity.js';
 import { Invoice } from '../../invoices/entities/invoice.entity.js';
 import { QuotationStatus } from '../enums/quotation-status.enum.js';
 import { InvoiceStatus } from '../../invoices/enums/invoice-status.enum.js';
@@ -31,6 +32,8 @@ export class QuotationsService {
     private readonly itemRepository: Repository<QuotationItem>,
     @InjectRepository(QuotationVersion)
     private readonly versionRepository: Repository<QuotationVersion>,
+    @InjectRepository(QuotationInvoiceAllocation)
+    private readonly allocationRepository: Repository<QuotationInvoiceAllocation>,
     @InjectRepository(Invoice)
     private readonly invoiceRepository: Repository<Invoice>,
     private readonly calculator: QuotationCalculatorService,
@@ -516,6 +519,70 @@ export class QuotationsService {
     );
 
     return this.quotationRepository.save(quotation);
+  }
+
+  async getBillingSummary(userId: string, quotationId: string) {
+    const quotation = await this.findOne(userId, quotationId);
+    const allocations = await this.allocationRepository.find({
+      where: { quotationId, userId },
+      order: { createdAt: 'ASC' },
+    });
+
+    const totalQuotationAmount = Number(quotation.totalAmount) || 0;
+    const invoicedAmount = allocations.reduce(
+      (sum, a) => sum + (Number(a.allocatedAmount) || 0),
+      0,
+    );
+    const remainingBillableAmount = Math.max(0, totalQuotationAmount - invoicedAmount);
+    const isFullyInvoiced = remainingBillableAmount <= 0.001;
+
+    return {
+      quotationId: quotation.quotationId,
+      quotationNumber: quotation.quotationNumber,
+      currency: quotation.currency,
+      totalQuotationAmount,
+      invoicedAmount,
+      remainingBillableAmount,
+      isFullyInvoiced,
+      allocations,
+    };
+  }
+
+  async getShareInfo(userId: string, quotationId: string) {
+    const quotation = await this.findOne(userId, quotationId);
+    return this.buildQuotationSharePayload(quotation);
+  }
+
+  async regeneratePublicToken(userId: string, quotationId: string) {
+    const quotation = await this.findOne(userId, quotationId);
+    quotation.publicToken = randomUUID();
+    const saved = await this.quotationRepository.save(quotation);
+    return this.buildQuotationSharePayload(saved);
+  }
+
+  private buildQuotationSharePayload(quotation: Quotation) {
+    const appUrl = process.env.APP_URL || 'https://app.slimdesk.com';
+    const publicUrl = `${appUrl}/quotations/public/${quotation.publicToken}`;
+    const clientName =
+      quotation.clientInfo?.name || quotation.clientInfo?.company || 'Client';
+    const freelancerName =
+      quotation.freelancerInfo?.name ||
+      quotation.freelancerInfo?.company ||
+      'Freelancer';
+    const clientPhone =
+      quotation.clientInfo?.phone?.replace(/[^0-9]/g, '') || '';
+
+    const suggestedMessage = `Hi ${clientName}, here is quotation ${quotation.quotationNumber} for ${quotation.title || 'Services'} (${quotation.currency} ${Number(quotation.totalAmount).toLocaleString('en-IN')}) from ${freelancerName}. You can review and approve it here: ${publicUrl}`;
+
+    const phoneParam = clientPhone ? `phone=${clientPhone}&` : '';
+    const whatsappUrl = `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(suggestedMessage)}`;
+
+    return {
+      publicUrl,
+      publicToken: quotation.publicToken,
+      whatsappUrl,
+      suggestedMessage,
+    };
   }
 
   private async createVersionSnapshot(

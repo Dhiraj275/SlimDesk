@@ -7,6 +7,7 @@ import { QuotationNumberService } from './quotation-number.service.js';
 import { Quotation } from '../entities/quotation.entity.js';
 import { QuotationItem } from '../entities/quotation-item.entity.js';
 import { QuotationVersion } from '../entities/quotation-version.entity.js';
+import { QuotationInvoiceAllocation } from '../entities/quotation-invoice-allocation.entity.js';
 import { Invoice } from '../../invoices/entities/invoice.entity.js';
 import { QuotationStatus } from '../enums/quotation-status.enum.js';
 import { TaxMode } from '../enums/tax-mode.enum.js';
@@ -16,6 +17,7 @@ describe('QuotationsService', () => {
   let mockQuotationRepo: any;
   let mockItemRepo: any;
   let mockVersionRepo: any;
+  let mockAllocationRepo: any;
   let mockInvoiceRepo: any;
   let mockNumberService: any;
 
@@ -44,6 +46,12 @@ describe('QuotationsService', () => {
       create: vi.fn().mockImplementation((entity) => ({ ...entity, versionId: 'ver-uuid-1' })),
       save: vi.fn().mockImplementation((entity) => Promise.resolve(entity)),
       count: vi.fn().mockResolvedValue(0),
+    };
+
+    mockAllocationRepo = {
+      find: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockImplementation((entity) => ({ ...entity, allocationId: 'alloc-1' })),
+      save: vi.fn().mockImplementation((entity) => Promise.resolve(entity)),
     };
 
     mockInvoiceRepo = {
@@ -81,6 +89,10 @@ describe('QuotationsService', () => {
         {
           provide: getRepositoryToken(QuotationVersion),
           useValue: mockVersionRepo,
+        },
+        {
+          provide: getRepositoryToken(QuotationInvoiceAllocation),
+          useValue: mockAllocationRepo,
         },
         {
           provide: getRepositoryToken(Invoice),

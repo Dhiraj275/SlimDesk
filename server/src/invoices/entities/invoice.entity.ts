@@ -45,7 +45,7 @@ export class Invoice {
     example: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
     description: 'Originating quotation UUID identifier (if converted from quotation)',
   })
-  @Index({ unique: true })
+  @Index()
   @Column({ type: 'varchar', length: 36, nullable: true })
   quotationId: string | null;
 

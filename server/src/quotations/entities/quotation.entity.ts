@@ -270,7 +270,7 @@ export class Quotation {
     example: '9f8e7d6c-5b4a-3210-fedc-ba9876543210',
     description: 'Generated Invoice UUID identifier',
   })
-  @Index({ unique: true })
+  @Index()
   @Column({ type: 'varchar', length: 36, nullable: true })
   invoiceId: string | null;
 

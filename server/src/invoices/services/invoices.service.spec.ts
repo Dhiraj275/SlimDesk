@@ -10,6 +10,10 @@ import { InvoiceItem } from '../entities/invoice-item.entity.js';
 import { InvoicePayment } from '../entities/invoice-payment.entity.js';
 import { InvoiceEvent } from '../entities/invoice-event.entity.js';
 import { Quotation } from '../../quotations/entities/quotation.entity.js';
+import { QuotationInvoiceAllocation } from '../../quotations/entities/quotation-invoice-allocation.entity.js';
+import { PaymentReceipt } from '../entities/payment-receipt.entity.js';
+import { ConversionBillingType } from '../../quotations/enums/conversion-billing-type.enum.js';
+import { SettingsService } from '../../settings/services/settings.service.js';
 import { InvoiceStatus } from '../enums/invoice-status.enum.js';
 import { PaymentStatus } from '../enums/payment-status.enum.js';
 import { PaymentMethod } from '../enums/payment-method.enum.js';
@@ -22,7 +26,10 @@ describe('InvoicesService', () => {
   let mockPaymentRepo: any;
   let mockEventRepo: any;
   let mockQuotationRepo: any;
+  let mockAllocationRepo: any;
+  let mockReceiptRepo: any;
   let mockNumberService: any;
+  let mockSettingsService: any;
 
   beforeEach(async () => {
     mockInvoiceRepo = {
@@ -62,6 +69,24 @@ describe('InvoicesService', () => {
       save: vi.fn().mockImplementation((entity) => Promise.resolve(entity)),
     };
 
+    mockAllocationRepo = {
+      find: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockImplementation((entity) => ({ ...entity, allocationId: 'alloc-1' })),
+      save: vi.fn().mockImplementation((entity) => Promise.resolve(entity)),
+    };
+
+    mockReceiptRepo = {
+      find: vi.fn().mockResolvedValue([]),
+      findOne: vi.fn(),
+      create: vi.fn().mockImplementation((entity) => ({ ...entity, receiptId: 'rct-1' })),
+      save: vi.fn().mockImplementation((entity) => Promise.resolve(entity)),
+    };
+
+    mockSettingsService = {
+      generateNextDocumentNumber: vi.fn().mockResolvedValue('RCT-2026-001'),
+      getPaymentProfiles: vi.fn().mockResolvedValue([]),
+    };
+
     mockNumberService = {
       generateNextNumber: vi.fn().mockResolvedValue('INV-2026-001'),
     };
@@ -73,6 +98,10 @@ describe('InvoicesService', () => {
         {
           provide: InvoiceNumberService,
           useValue: mockNumberService,
+        },
+        {
+          provide: SettingsService,
+          useValue: mockSettingsService,
         },
         {
           provide: getRepositoryToken(Invoice),
@@ -93,6 +122,14 @@ describe('InvoicesService', () => {
         {
           provide: getRepositoryToken(Quotation),
           useValue: mockQuotationRepo,
+        },
+        {
+          provide: getRepositoryToken(QuotationInvoiceAllocation),
+          useValue: mockAllocationRepo,
+        },
+        {
+          provide: getRepositoryToken(PaymentReceipt),
+          useValue: mockReceiptRepo,
         },
       ],
     }).compile();
@@ -149,6 +186,59 @@ describe('InvoicesService', () => {
       expect(invoice.status).toBe(InvoiceStatus.DRAFT);
       expect(invoice.totalAmount).toBe(40000);
       expect(mockQuotationRepo.save).toHaveBeenCalled();
+    });
+
+    it('should support percentage-based advance billing and keep quotation in accepted state', async () => {
+      const quotation = {
+        quotationId: 'quote-1',
+        userId: 'user-1',
+        quotationNumber: 'QT-2026-001',
+        title: 'Full Website Build',
+        totalAmount: 50000,
+        currency: 'INR',
+        taxMode: 'none',
+        items: [{ description: 'Dev', quantity: 1, unitPrice: 50000 }],
+      };
+      mockQuotationRepo.findOne.mockResolvedValue(quotation);
+      mockAllocationRepo.find.mockResolvedValue([]);
+
+      const invoice = await service.createFromQuotation('user-1', 'quote-1', {
+        billingType: ConversionBillingType.PERCENTAGE,
+        percentage: 50,
+        notes: '50% advance before kickoff',
+      });
+
+      expect(invoice.quotationId).toBe('quote-1');
+      expect(invoice.totalAmount).toBe(25000);
+      expect(mockAllocationRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          quotationId: 'quote-1',
+          allocatedAmount: 25000,
+          billingType: ConversionBillingType.PERCENTAGE,
+          percentage: 50,
+        }),
+      );
+    });
+
+    it('should prevent overbilling when requested amount exceeds remaining billable', async () => {
+      const quotation = {
+        quotationId: 'quote-1',
+        userId: 'user-1',
+        quotationNumber: 'QT-2026-001',
+        totalAmount: 50000,
+      };
+      mockQuotationRepo.findOne.mockResolvedValue(quotation);
+      // Already allocated 40,000, remaining is 10,000
+      mockAllocationRepo.find.mockResolvedValue([
+        { allocatedAmount: 40000, quotationId: 'quote-1' },
+      ]);
+
+      await expect(
+        service.createFromQuotation('user-1', 'quote-1', {
+          billingType: ConversionBillingType.CUSTOM,
+          customAmount: 15000,
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -265,6 +355,61 @@ describe('InvoicesService', () => {
       await expect(
         service.cancel('user-1', 'inv-1', { reason: 'Client requested cancel' }),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('generateReceipt', () => {
+    it('should generate sequential receipt for completed payment', async () => {
+      const invoice = {
+        invoiceId: 'inv-1',
+        userId: 'user-1',
+        currency: 'INR',
+        clientInfo: { name: 'Acme Studio' },
+        freelancerInfo: { name: 'Dhiraj' },
+      };
+      const payment = {
+        paymentId: 'pay-1',
+        invoiceId: 'inv-1',
+        userId: 'user-1',
+        amount: 25000,
+        paymentDate: '2026-11-08',
+        paymentMethod: PaymentMethod.UPI,
+        status: PaymentRecordStatus.COMPLETED,
+      };
+
+      mockInvoiceRepo.findOne.mockResolvedValue(invoice);
+      mockPaymentRepo.findOne.mockResolvedValue(payment);
+      mockReceiptRepo.findOne.mockResolvedValue(null);
+
+      const receipt = await service.generateReceipt('user-1', 'inv-1', 'pay-1');
+
+      expect(receipt.receiptNumber).toBe('RCT-2026-001');
+      expect(receipt.amountReceived).toBe(25000);
+      expect(receipt.publicToken).toBeDefined();
+      expect(mockReceiptRepo.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('getShareInfo', () => {
+    it('should generate whatsapp click-to-chat payload and secure public link', async () => {
+      const invoice = {
+        invoiceId: 'inv-1',
+        userId: 'user-1',
+        invoiceNumber: 'INV-2026-001',
+        totalAmount: 25000,
+        currency: 'INR',
+        publicToken: 'tok-123',
+        clientInfo: { name: 'Acme Studio', phone: '+91 98765 43210' },
+        freelancerInfo: { name: 'Dhiraj Freelancer' },
+      };
+      mockInvoiceRepo.findOne.mockResolvedValue(invoice);
+
+      const share = await service.getShareInfo('user-1', 'inv-1');
+
+      expect(share.publicToken).toBe('tok-123');
+      expect(share.publicUrl).toContain('tok-123');
+      expect(share.whatsappUrl).toContain('919876543210');
+      expect(share.suggestedMessage).toContain('INV-2026-001');
     });
   });
 });

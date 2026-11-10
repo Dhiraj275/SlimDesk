@@ -5,6 +5,7 @@ export enum InvoiceEventType {
   VIEWED = 'viewed',
   PAYMENT_RECORDED = 'payment_recorded',
   REMINDER_SENT = 'reminder_sent',
+  SHARED = 'shared',
   CANCELLED = 'cancelled',
   REFUND_RECORDED = 'refund_recorded',
 }

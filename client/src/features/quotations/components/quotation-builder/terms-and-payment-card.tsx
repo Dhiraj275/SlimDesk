@@ -5,7 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Badge } from '@/shared/components/ui/badge';
-import { IconCreditCard, IconFileText, IconNotes } from '@tabler/icons-react';
+import { useSettings } from '@/features/settings/context/settings-context';
+import { IconCreditCard, IconFileText, IconNotes, IconSparkles } from '@tabler/icons-react';
 
 interface TermsAndPaymentCardProps {
   paymentSchedule: string;
@@ -31,6 +32,8 @@ export const TermsAndPaymentCard: React.FC<TermsAndPaymentCardProps> = ({
   notes,
   onNotesChange,
 }) => {
+  const { settings } = useSettings();
+  const customSnippets = settings.snippets || [];
   return (
     <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
       <CardHeader className='pb-3'>
@@ -66,7 +69,26 @@ export const TermsAndPaymentCard: React.FC<TermsAndPaymentCardProps> = ({
 
         {/* Standard Terms & Conditions */}
         <div className='space-y-1.5'>
-          <Label className='text-xs font-medium'>Terms & Scope Conditions</Label>
+          <div className='flex items-center justify-between'>
+            <Label className='text-xs font-medium'>Terms & Scope Conditions</Label>
+            {customSnippets.filter((s) => s.category === 'terms' || s.category === 'revision_policy').length > 0 && (
+              <div className='flex items-center gap-1 flex-wrap'>
+                <span className='text-[10px] text-muted-foreground mr-1'>Library:</span>
+                {customSnippets
+                  .filter((s) => s.category === 'terms' || s.category === 'revision_policy')
+                  .map((s) => (
+                    <Badge
+                      key={s.id}
+                      variant='outline'
+                      onClick={() => onTermsChange(s.content)}
+                      className='cursor-pointer text-[10px] py-0 px-2 rounded hover:bg-muted font-normal'
+                    >
+                      {s.title}
+                    </Badge>
+                  ))}
+              </div>
+            )}
+          </div>
           <Textarea
             rows={3}
             value={terms}
@@ -78,7 +100,25 @@ export const TermsAndPaymentCard: React.FC<TermsAndPaymentCardProps> = ({
 
         {/* Internal / Client Notes */}
         <div className='space-y-1.5'>
-          <Label className='text-xs font-medium'>Client Notes / Footer Message (Optional)</Label>
+          <div className='flex items-center justify-between'>
+            <Label className='text-xs font-medium'>Client Notes / Footer Message (Optional)</Label>
+            {customSnippets.filter((s) => s.category === 'notes').length > 0 && (
+              <div className='flex items-center gap-1 flex-wrap'>
+                {customSnippets
+                  .filter((s) => s.category === 'notes')
+                  .map((s) => (
+                    <Badge
+                      key={s.id}
+                      variant='outline'
+                      onClick={() => onNotesChange(s.content)}
+                      className='cursor-pointer text-[10px] py-0 px-2 rounded hover:bg-muted font-normal'
+                    >
+                      {s.title}
+                    </Badge>
+                  ))}
+              </div>
+            )}
+          </div>
           <Textarea
             rows={2}
             value={notes}

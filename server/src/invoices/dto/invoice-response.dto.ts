@@ -39,6 +39,49 @@ export class InvoiceResponseDto extends Invoice {
     description: 'Percentage of the total invoice amount that has been paid',
   })
   paymentPercentage: number;
+
+  @ApiProperty({
+    example: 7,
+    description: 'Days past the invoice payment due date',
+  })
+  daysOverdue: number;
+
+  @ApiProperty({
+    example: '1-7',
+    description: 'Overdue aging bucket: current, 1-7, 8-30, 31-60, 60+',
+  })
+  agingBucket: string;
+
+  @ApiProperty({
+    example: 'Overdue by 7 days',
+    description: 'Human-readable visual aging description (e.g. Due in 5 days, Overdue by 7 days)',
+  })
+  agingLabel: string;
+}
+
+export class OverdueAgingBucketDto {
+  @ApiProperty({ example: 2, description: 'Number of invoices in this aging bucket' })
+  count: number;
+
+  @ApiProperty({ example: 25000, description: 'Total outstanding amount in this aging bucket' })
+  amount: number;
+}
+
+export class OverdueAgingBreakdownDto {
+  @ApiProperty({ type: OverdueAgingBucketDto, description: 'Not yet overdue' })
+  current: OverdueAgingBucketDto;
+
+  @ApiProperty({ type: OverdueAgingBucketDto, description: 'Overdue by 1 to 7 days' })
+  days1to7: OverdueAgingBucketDto;
+
+  @ApiProperty({ type: OverdueAgingBucketDto, description: 'Overdue by 8 to 30 days' })
+  days8to30: OverdueAgingBucketDto;
+
+  @ApiProperty({ type: OverdueAgingBucketDto, description: 'Overdue by 31 to 60 days' })
+  days31to60: OverdueAgingBucketDto;
+
+  @ApiProperty({ type: OverdueAgingBucketDto, description: 'Overdue by more than 60 days' })
+  days60plus: OverdueAgingBucketDto;
 }
 
 export class InvoiceMetricsDto {
@@ -77,4 +120,10 @@ export class InvoiceMetricsDto {
 
   @ApiProperty({ example: 1, description: 'Unpaid invoices count' })
   unpaidCount: number;
+
+  @ApiProperty({
+    type: OverdueAgingBreakdownDto,
+    description: 'Visual aging analysis across current and overdue time buckets',
+  })
+  overdueAgingBreakdown: OverdueAgingBreakdownDto;
 }

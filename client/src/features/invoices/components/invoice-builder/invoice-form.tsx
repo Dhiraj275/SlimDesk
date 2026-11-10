@@ -27,6 +27,8 @@ import {
   TaxMode,
   PartyInfo,
 } from '../../types/invoice.types';
+import { useSettings } from '@/features/settings/context/settings-context';
+import { Badge } from '@/shared/components/ui/badge';
 import { toast } from 'sonner';
 import {
   IconReceipt2,
@@ -146,6 +148,36 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
   const [isSaving, setIsSaving] = useState(false);
+
+  const { settings, getDefaultPaymentProfile } = useSettings();
+
+  // Snapshot defaults from settings when creating a brand new invoice
+  useEffect(() => {
+    if (!initialData) {
+      if (settings.businessProfile?.businessName) {
+        setFreelancerInfo((prev) => ({
+          ...prev,
+          name: settings.businessProfile.businessName,
+          businessName: settings.businessProfile.legalName || settings.businessProfile.businessName,
+          email: settings.businessProfile.email || prev.email,
+          phone: settings.businessProfile.phone || prev.phone,
+          address: settings.businessProfile.address || prev.address,
+          gstin: settings.businessProfile.gstin || prev.gstin,
+          state: settings.businessProfile.state || prev.state,
+        }));
+      }
+      const defProfile = getDefaultPaymentProfile();
+      if (defProfile?.details) {
+        setPaymentDetails(defProfile.details);
+      }
+      if (settings.financialDefaults?.defaultCurrency) {
+        setCurrency(settings.financialDefaults.defaultCurrency);
+      }
+      if (settings.financialDefaults?.defaultTaxMode) {
+        setTaxMode(settings.financialDefaults.defaultTaxMode);
+      }
+    }
+  }, [initialData]);
 
   // Fetch contacts for client dropdown
   useEffect(() => {
@@ -448,6 +480,29 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       onChange={(e) => setDueDate(e.target.value)}
                       className='h-10 text-xs'
                     />
+                    <div className='flex items-center gap-1 flex-wrap pt-0.5'>
+                      <span className='text-[10px] text-muted-foreground mr-0.5'>Presets:</span>
+                      {[
+                        { label: 'Today', days: 0 },
+                        { label: '+7d', days: 7 },
+                        { label: '+14d', days: 14 },
+                        { label: '+30d', days: 30 },
+                        { label: '+60d', days: 60 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.days}
+                          type='button'
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + preset.days);
+                            setDueDate(d.toISOString().split('T')[0]);
+                          }}
+                          className='px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40 transition-colors'
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -582,7 +637,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
             {/* Payment Details & Instructions */}
             <Card className='border-border/50 bg-card rounded-xl shadow-xs'>
-              <CardHeader className='pb-3'>
+              <CardHeader className='pb-3 flex flex-row items-center justify-between flex-wrap gap-2'>
                 <div className='space-y-1'>
                   <CardTitle className='text-sm font-semibold flex items-center gap-2 text-foreground'>
                     <IconCreditCard className='h-4 w-4 text-primary' />
@@ -592,6 +647,26 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     Provide your bank account, IFSC code, UPI ID, or remittance guidelines.
                   </p>
                 </div>
+
+                {settings.paymentProfiles.length > 0 && (
+                  <Select
+                    onValueChange={(id) => {
+                      const found = settings.paymentProfiles.find((p) => p.id === id);
+                      if (found) setPaymentDetails(found.details);
+                    }}
+                  >
+                    <SelectTrigger className='h-8 text-xs w-52'>
+                      <SelectValue placeholder='Load Payment Profile...' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {settings.paymentProfiles.map((p) => (
+                        <SelectItem key={p.id} value={p.id} className='text-xs'>
+                          {p.name} {p.isDefault ? '· Default' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </CardHeader>
               <CardContent className='space-y-4'>
                 <div className='space-y-1.5'>
@@ -621,7 +696,26 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
               </CardHeader>
               <CardContent className='space-y-4'>
                 <div className='space-y-1.5'>
-                  <Label className='text-xs font-medium'>Payment Terms</Label>
+                  <div className='flex items-center justify-between flex-wrap gap-1'>
+                    <Label className='text-xs font-medium'>Payment Terms</Label>
+                    {settings.snippets.filter((s) => s.category === 'terms').length > 0 && (
+                      <div className='flex items-center gap-1 flex-wrap'>
+                        <span className='text-[10px] text-muted-foreground mr-0.5'>Snippets:</span>
+                        {settings.snippets
+                          .filter((s) => s.category === 'terms')
+                          .map((s) => (
+                            <Badge
+                              key={s.id}
+                              variant='outline'
+                              onClick={() => setTerms(s.content)}
+                              className='cursor-pointer text-[10px] py-0 px-2 rounded hover:bg-muted font-normal'
+                            >
+                              {s.title}
+                            </Badge>
+                          ))}
+                      </div>
+                    )}
+                  </div>
                   <Textarea
                     rows={2}
                     value={terms}
@@ -632,7 +726,26 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 </div>
 
                 <div className='space-y-1.5'>
-                  <Label className='text-xs font-medium'>Client Notes / Footer Message</Label>
+                  <div className='flex items-center justify-between flex-wrap gap-1'>
+                    <Label className='text-xs font-medium'>Client Notes / Footer Message</Label>
+                    {settings.snippets.filter((s) => s.category === 'notes').length > 0 && (
+                      <div className='flex items-center gap-1 flex-wrap'>
+                        <span className='text-[10px] text-muted-foreground mr-0.5'>Snippets:</span>
+                        {settings.snippets
+                          .filter((s) => s.category === 'notes')
+                          .map((s) => (
+                            <Badge
+                              key={s.id}
+                              variant='outline'
+                              onClick={() => setNotes(s.content)}
+                              className='cursor-pointer text-[10px] py-0 px-2 rounded hover:bg-muted font-normal'
+                            >
+                              {s.title}
+                            </Badge>
+                          ))}
+                      </div>
+                    )}
+                  </div>
                   <Textarea
                     rows={2}
                     value={notes}
