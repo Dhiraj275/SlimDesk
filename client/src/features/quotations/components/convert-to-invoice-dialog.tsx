@@ -48,7 +48,7 @@ export const ConvertToInvoiceDialog: React.FC<ConvertToInvoiceDialogProps> = ({
   onSuccess,
 }) => {
   const router = useRouter();
-  const { getQuotationBillingMetrics, recordQuotationAllocation } = useSettings();
+  const { getQuotationBillingMetrics, recordQuotationAllocation, getDefaultPaymentProfile } = useSettings();
 
   const isModalOpen = open ?? isOpen ?? false;
   const handleModalClose = (val: boolean) => {
@@ -112,60 +112,25 @@ export const ConvertToInvoiceDialog: React.FC<ConvertToInvoiceDialogProps> = ({
     try {
       const titleToUse = invoiceTitle.trim() || defaultSuggestedTitle;
 
-      // Construct line item(s) for the invoice
-      let itemsPayload = [];
-      if (billingType === 'full' && allocations.length === 0) {
-        // Full original quotation line items
-        itemsPayload = (quotation.items || []).map((item, idx) => ({
-          description: item.description,
-          quantity: Number(item.quantity) || 1,
-          unit: item.unit || 'units',
-          unitPrice: Number(item.unitPrice) || 0,
-          discountAmount: Number(item.discount) || 0,
-          taxRate: Number(item.taxRate) || 0,
-          sortOrder: idx,
-        }));
-      } else {
-        // Milestone / Advance line item
-        itemsPayload = [
-          {
-            description: titleToUse,
-            quantity: 1,
-            unit: 'milestone',
-            unitPrice: amountToBill,
-            discountAmount: 0,
-            taxRate: quotation.taxMode !== 'none' ? 18 : 0,
-            sortOrder: 0,
-          },
-        ];
-      }
-
       const todayStr = new Date().toISOString().split('T')[0];
       const dueDateStr = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split('T')[0];
 
-      const invoice = await invoicesApi.createInvoice({
-        title: titleToUse,
-        contactId: quotation.contactId || undefined,
-        quotationId: quotation.quotationId,
-        currency,
-        issueDate: todayStr,
+      const defaultProfile = getDefaultPaymentProfile();
+      const invoice = await invoicesApi.createFromQuotation(quotation.quotationId, {
+        billingType:
+          billingType === 'custom'
+            ? 'custom'
+            : billingType === 'advance'
+            ? 'percentage'
+            : 'full',
+        percentage: billingType === 'advance' ? advancePercent : undefined,
+        customAmount: billingType === 'custom' ? customAmount : undefined,
+        paymentProfileId:
+          defaultProfile?.paymentProfileId || defaultProfile?.id || undefined,
+        notes: invoiceTitle.trim() || undefined,
         dueDate: dueDateStr,
-        taxMode: quotation.taxMode || 'none',
-        discountAmount: 0,
-        freelancerInfo: quotation.freelancerInfo,
-        clientInfo: quotation.clientInfo,
-        paymentDetails:
-          quotation.paymentSchedule ||
-          'Bank Transfer / UPI remittance details will be provided.',
-        terms:
-          quotation.terms ||
-          'Payment due within 14 days of invoice issuance.',
-        notes: `Billed against accepted quotation ${quotation.quotationNumber}. Remaining unbilled: ${formatCurrency(
-          remainingAfterThis
-        )}.`,
-        items: itemsPayload,
       });
 
       // Record allocation tracking

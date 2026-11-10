@@ -10,6 +10,7 @@ import {
 } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
 import { Invoice, InvoicePayment } from '../types/invoice.types';
+import { invoicesApi } from '../api/invoices.api';
 import { useSettings } from '@/features/settings/context/settings-context';
 import { formatAmountInWords } from '@/features/quotations/pdf/amount-in-words';
 import {
@@ -35,6 +36,18 @@ export const PaymentReceiptDialog: React.FC<PaymentReceiptDialogProps> = ({
   onClose,
 }) => {
   const { settings } = useSettings();
+  const [backendReceipt, setBackendReceipt] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (isOpen && payment && invoice) {
+      invoicesApi
+        .generateReceipt(invoice.invoiceId, payment.paymentId)
+        .then((res) => {
+          if (res) setBackendReceipt(res);
+        })
+        .catch(() => {});
+    }
+  }, [isOpen, payment?.paymentId, invoice?.invoiceId]);
 
   if (!payment) return null;
 
@@ -63,9 +76,11 @@ export const PaymentReceiptDialog: React.FC<PaymentReceiptDialogProps> = ({
     }
   };
 
-  const receiptNumber = `RCT-${new Date(payment.paymentDate || Date.now()).getFullYear()}-${payment.paymentId.slice(
-    -4
-  ).toUpperCase()}`;
+  const receiptNumber =
+    backendReceipt?.receiptNumber ||
+    `RCT-${new Date(payment.paymentDate || Date.now()).getFullYear()}-${payment.paymentId.slice(
+      -4
+    ).toUpperCase()}`;
 
   const handlePrint = () => {
     window.print();
@@ -268,3 +283,4 @@ export const PaymentReceiptDialog: React.FC<PaymentReceiptDialogProps> = ({
     </Dialog>
   );
 };
+

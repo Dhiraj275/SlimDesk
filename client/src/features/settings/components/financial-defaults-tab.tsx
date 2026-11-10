@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/card';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -19,6 +19,14 @@ export const FinancialDefaultsTab: React.FC = () => {
   const { settings, updateFinancialDefaults, updateNumbering } = useSettings();
   const [finForm, setFinForm] = useState(settings.financialDefaults);
   const [numForm, setNumForm] = useState(settings.numbering);
+
+  useEffect(() => {
+    setFinForm(settings.financialDefaults);
+  }, [settings.financialDefaults]);
+
+  useEffect(() => {
+    setNumForm(settings.numbering);
+  }, [settings.numbering]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,3 +185,4 @@ export const FinancialDefaultsTab: React.FC = () => {
     </form>
   );
 };
+

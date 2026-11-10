@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/shared/components/ui/button';
@@ -43,8 +43,45 @@ export const QuotationDetailsView: React.FC<QuotationDetailsViewProps> = ({
   const [isConvertOpen, setIsConvertOpen] = useState(false);
 
   const { getQuotationBillingMetrics } = useSettings();
-  const { totalInvoiced, remainingBillable, percentBilled, allocations } =
-    getQuotationBillingMetrics(quotation.quotationId, Number(quotation.totalAmount) || 0);
+  const localMetrics = getQuotationBillingMetrics(
+    quotation.quotationId,
+    Number(quotation.totalAmount) || 0
+  );
+
+  const [serverBillingSummary, setServerBillingSummary] = useState<any>(null);
+
+  const fetchBillingSummary = React.useCallback(() => {
+    quotationsApi
+      .getBillingSummary(quotation.quotationId)
+      .then((data) => setServerBillingSummary(data))
+      .catch(() => {});
+  }, [quotation.quotationId]);
+
+  useEffect(() => {
+    fetchBillingSummary();
+  }, [fetchBillingSummary]);
+
+  const totalInvoiced = serverBillingSummary
+    ? Number(serverBillingSummary.totalInvoiced) || 0
+    : localMetrics.totalInvoiced;
+  const remainingBillable = serverBillingSummary
+    ? Number(serverBillingSummary.remainingBillable) || 0
+    : localMetrics.remainingBillable;
+  const percentBilled = serverBillingSummary
+    ? Number(serverBillingSummary.percentInvoiced) || 0
+    : localMetrics.percentBilled;
+
+  const displayInvoices =
+    serverBillingSummary?.invoices && serverBillingSummary.invoices.length > 0
+      ? serverBillingSummary.invoices.map((inv: any) => ({
+          id: inv.allocationId || inv.invoiceId,
+          invoiceId: inv.invoiceId,
+          invoiceNumber: inv.invoiceNumber,
+          amountInvoiced: Number(inv.amountInvoiced) || 0,
+          type: inv.type,
+          note: inv.note,
+        }))
+      : localMetrics.allocations;
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -298,13 +335,13 @@ export const QuotationDetailsView: React.FC<QuotationDetailsViewProps> = ({
                 </div>
               </div>
 
-              {allocations.length > 0 && (
+              {displayInvoices.length > 0 && (
                 <div className='pt-2 border-t border-border/40 space-y-2'>
                   <span className='text-[10px] font-bold uppercase tracking-wider text-muted-foreground block'>
-                    Generated Invoices ({allocations.length})
+                    Generated Invoices ({displayInvoices.length})
                   </span>
                   <div className='space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar'>
-                    {allocations.map((a) => (
+                    {displayInvoices.map((a: any) => (
                       <Link
                         key={a.id}
                         href={`/dashboard/invoices/${a.invoiceId}`}
@@ -509,6 +546,7 @@ export const QuotationDetailsView: React.FC<QuotationDetailsViewProps> = ({
         open={isConvertOpen}
         onOpenChange={setIsConvertOpen}
         onSuccess={(inv) => {
+          fetchBillingSummary();
           quotationsApi.getQuotationById(quotation.quotationId).then(setQuotation);
           if (inv?.invoiceId) {
             router.push(`/dashboard/invoices/${inv.invoiceId}`);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/card';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -17,6 +17,10 @@ import {
 export const BrandingTab: React.FC = () => {
   const { settings, updateBranding } = useSettings();
   const [form, setForm] = useState(settings.branding);
+
+  useEffect(() => {
+    setForm(settings.branding);
+  }, [settings.branding]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,3 +221,4 @@ export const BrandingTab: React.FC = () => {
     </form>
   );
 };
+

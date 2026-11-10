@@ -33,8 +33,21 @@ export const invoicesApi = {
     return await api.post<Invoice>('/invoices', payload);
   },
 
-  createFromQuotation: async (quotationId: string): Promise<Invoice> => {
-    return await api.post<Invoice>(`/invoices/from-quotation/${quotationId}`);
+  createFromQuotation: async (
+    quotationId: string,
+    payload?: {
+      billingType?: 'full' | 'percentage' | 'custom';
+      percentage?: number;
+      customAmount?: number;
+      paymentProfileId?: string;
+      notes?: string;
+      dueDate?: string;
+    }
+  ): Promise<Invoice> => {
+    return await api.post<Invoice>(
+      `/invoices/from-quotation/${quotationId}`,
+      payload
+    );
   },
 
   updateInvoice: async (
@@ -94,10 +107,59 @@ export const invoicesApi = {
     return await api.post<Invoice>(`/invoices/${invoiceId}/cancel`, payload);
   },
 
+  getShareInfo: async (
+    invoiceId: string
+  ): Promise<{
+    invoiceId: string;
+    invoiceNumber: string;
+    publicUrl: string;
+    publicToken: string;
+    whatsAppUrl: string;
+    shareText: string;
+  }> => {
+    return await api.get<{
+      invoiceId: string;
+      invoiceNumber: string;
+      publicUrl: string;
+      publicToken: string;
+      whatsAppUrl: string;
+      shareText: string;
+    }>(`/invoices/${invoiceId}/share`);
+  },
+
+  generateReceipt: async (
+    invoiceId: string,
+    paymentId: string,
+    payload?: { notes?: string }
+  ): Promise<any> => {
+    return await api.post<any>(
+      `/invoices/${invoiceId}/payments/${paymentId}/receipt`,
+      payload
+    );
+  },
+
+  getReceiptsForInvoice: async (invoiceId: string): Promise<any[]> => {
+    return await api.get<any[]>(`/invoices/${invoiceId}/receipts`);
+  },
+
+  getAllReceipts: async (): Promise<any[]> => {
+    return await api.get<any[]>('/receipts');
+  },
+
+  getReceiptById: async (receiptId: string): Promise<any> => {
+    return await api.get<any>(`/receipts/${receiptId}`);
+  },
+
   // --- Public Portal Methods (No Auth Required) ---
 
   getPublicInvoice: async (token: string): Promise<Invoice> => {
     return await api.get<Invoice>(`/invoices/public/${token}`, undefined, {
+      skipAuth: true,
+    });
+  },
+
+  getPublicReceipt: async (token: string): Promise<any> => {
+    return await api.get<any>(`/receipts/public/${token}`, undefined, {
       skipAuth: true,
     });
   },

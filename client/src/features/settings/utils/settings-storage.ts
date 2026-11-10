@@ -185,3 +185,4 @@ export const saveStoredSettings = (settings: SettingsState): void => {
     console.error('Failed to save document settings to localStorage:', e);
   }
 };
+

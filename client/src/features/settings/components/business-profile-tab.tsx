@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/card';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -44,6 +44,10 @@ const INDIAN_STATES = [
 export const BusinessProfileTab: React.FC = () => {
   const { settings, updateBusinessProfile } = useSettings();
   const [form, setForm] = useState(settings.businessProfile);
+
+  useEffect(() => {
+    setForm(settings.businessProfile);
+  }, [settings.businessProfile]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,3 +165,4 @@ export const BusinessProfileTab: React.FC = () => {
     </form>
   );
 };
+

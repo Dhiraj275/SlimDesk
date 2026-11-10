@@ -54,8 +54,57 @@ export const quotationsApi = {
     return await api.post<any>(`/invoices/from-quotation/${quotationId}`);
   },
 
-  convertToInvoice: async (quotationId: string): Promise<any> => {
-    return await api.post<any>(`/invoices/from-quotation/${quotationId}`);
+  convertToInvoice: async (
+    quotationId: string,
+    payload?: {
+      billingType?: 'full' | 'percentage' | 'custom';
+      percentage?: number;
+      customAmount?: number;
+      paymentProfileId?: string;
+      notes?: string;
+      dueDate?: string;
+    }
+  ): Promise<any> => {
+    return await api.post<any>(
+      `/invoices/from-quotation/${quotationId}`,
+      payload
+    );
+  },
+
+  getBillingSummary: async (
+    quotationId: string
+  ): Promise<{
+    quotationId: string;
+    quotationNumber: string;
+    quotationTotal: number;
+    totalInvoiced: number;
+    remainingBillable: number;
+    percentInvoiced: number;
+    isFullyInvoiced: boolean;
+    invoices: Array<{
+      allocationId: string;
+      invoiceId: string;
+      invoiceNumber: string;
+      amountInvoiced: number;
+      allocatedAt: string;
+      type: string;
+      note?: string;
+    }>;
+  }> => {
+    return await api.get<any>(`/quotations/${quotationId}/billing-summary`);
+  },
+
+  getShareInfo: async (
+    quotationId: string
+  ): Promise<{
+    quotationId: string;
+    quotationNumber: string;
+    publicUrl: string;
+    publicToken: string;
+    whatsAppUrl: string;
+    shareText: string;
+  }> => {
+    return await api.get<any>(`/quotations/${quotationId}/share`);
   },
 
   deleteQuotation: async (quotationId: string): Promise<void> => {
