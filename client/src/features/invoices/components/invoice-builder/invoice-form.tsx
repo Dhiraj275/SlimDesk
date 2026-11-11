@@ -61,7 +61,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   // Form states
   const [title, setTitle] = useState(
-    initialData?.title || initialTitle || 'Website Redesign & Development Services'
+    initialData?.title || initialTitle || ''
   );
   const [currency, setCurrency] = useState(initialData?.currency || 'INR');
   const [issueDate, setIssueDate] = useState(
@@ -88,11 +88,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   // Parties info
   const [freelancerInfo, setFreelancerInfo] = useState<PartyInfo>({
-    name: initialData?.freelancerInfo?.name || 'SlimDesk Studio',
+    name: initialData?.freelancerInfo?.name || '',
     businessName: initialData?.freelancerInfo?.businessName || '',
-    email: initialData?.freelancerInfo?.email || 'hello@example.com',
-    phone: initialData?.freelancerInfo?.phone || '+91 98765 43210',
-    address: initialData?.freelancerInfo?.address || 'Mumbai, Maharashtra, India',
+    email: initialData?.freelancerInfo?.email || '',
+    phone: initialData?.freelancerInfo?.phone || '',
+    address: initialData?.freelancerInfo?.address || '',
     gstin: initialData?.freelancerInfo?.gstin || '',
     state: initialData?.freelancerInfo?.state || 'Maharashtra',
   });
@@ -122,28 +122,25 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
     return [
       {
-        description: 'Frontend Development & UI Implementation',
+        description: '',
         quantity: 1,
         unit: 'units',
-        unitPrice: 25000,
+        unitPrice: '',
         discountAmount: 0,
-        taxRate: 18,
+        taxRate: 0,
         sortOrder: 0,
       },
     ];
   });
 
   const [paymentDetails, setPaymentDetails] = useState(
-    initialData?.paymentDetails ||
-      'Bank: HDFC Bank\nA/C No: 50100012345678\nIFSC: HDFC0001234\nAccount Name: SlimDesk Freelance\nUPI ID: slimdesk@hdfcbank'
+    initialData?.paymentDetails || ''
   );
   const [terms, setTerms] = useState(
-    initialData?.terms ||
-      'Payment due within 14 days of invoice issuance. Late payments incur 1.5% interest per month.'
+    initialData?.terms || ''
   );
   const [notes, setNotes] = useState(
-    initialData?.notes ||
-      'Thank you for your business! Please include the invoice number in your payment transfer remarks.'
+    initialData?.notes || ''
   );
 
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');

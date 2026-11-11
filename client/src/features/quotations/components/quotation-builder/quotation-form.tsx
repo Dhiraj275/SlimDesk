@@ -63,7 +63,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
 
   // Form states
   const [title, setTitle] = useState(
-    initialData?.title || initialTitle || 'Website Redesign & Development'
+    initialData?.title || initialTitle || ''
   );
   const [currency, setCurrency] = useState(initialData?.currency || 'INR');
   const [issueDate, setIssueDate] = useState(
@@ -90,7 +90,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
 
   // Parties info
   const [freelancerInfo, setFreelancerInfo] = useState<PartyInfo>({
-    name: initialData?.freelancerInfo?.name || 'Studio Freelance',
+    name: initialData?.freelancerInfo?.name || '',
     businessName: initialData?.freelancerInfo?.businessName || '',
     email: initialData?.freelancerInfo?.email || '',
     phone: initialData?.freelancerInfo?.phone || '',
@@ -103,23 +103,23 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
     name:
       initialData?.clientInfo?.name ||
       initialClientInfo?.name ||
-      'Acme Studio',
+      '',
     company:
       initialData?.clientInfo?.company ||
       initialClientInfo?.company ||
-      'Acme Studio Inc.',
+      '',
     email:
       initialData?.clientInfo?.email ||
       initialClientInfo?.email ||
-      'client@acmestudio.com',
+      '',
     phone:
       initialData?.clientInfo?.phone ||
       initialClientInfo?.phone ||
-      '+91 98765 43210',
+      '',
     address:
       initialData?.clientInfo?.address ||
       initialClientInfo?.address ||
-      'Bandra West, Mumbai 400050',
+      '',
     gstin: initialData?.clientInfo?.gstin || '',
     state: initialData?.clientInfo?.state || 'Maharashtra',
   });
@@ -157,16 +157,13 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
 
   // Terms & Payment schedule
   const [paymentSchedule, setPaymentSchedule] = useState(
-    initialData?.paymentSchedule ||
-      '50% advance upon project confirmation, remaining 50% on final handover.'
+    initialData?.paymentSchedule || ''
   );
   const [terms, setTerms] = useState(
-    initialData?.terms ||
-      '1. Quotation is valid for 14 days from date of issue.\n2. Scope adjustments or additional deliverables will be quoted separately.\n3. Source code & assets handed over upon receipt of final settlement.'
+    initialData?.terms || ''
   );
   const [notes, setNotes] = useState(
-    initialData?.notes ||
-      'Thank you for considering our proposal! Please let us know if you have any questions.'
+    initialData?.notes || ''
   );
 
   // UI state
