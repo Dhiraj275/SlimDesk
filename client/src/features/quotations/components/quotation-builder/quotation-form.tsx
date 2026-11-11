@@ -736,7 +736,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                 <div className='space-y-1.5'>
                   <Label className='text-xs font-medium'>Your Name / Brand</Label>
                   <Input
-                    placeholder='e.g. Dhiraj Prajapati or Studio Name'
+                    placeholder='e.g. Alex Morgan / Design Studio'
                     value={freelancerInfo.name}
                     onChange={(e) =>
                       setFreelancerInfo({

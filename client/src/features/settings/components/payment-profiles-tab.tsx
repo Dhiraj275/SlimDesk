@@ -316,7 +316,7 @@ export const PaymentProfilesTab: React.FC = () => {
                 <Input
                   value={form.upiId || ''}
                   onChange={(e) => setForm({ ...form, upiId: e.target.value })}
-                  placeholder='dhiraj@okhdfcbank'
+                  placeholder='freelancer@upi'
                   className='h-9 text-xs font-mono'
                 />
               </div>

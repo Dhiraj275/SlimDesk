@@ -140,7 +140,7 @@ export const BrandingTab: React.FC = () => {
                       signatureType: 'text',
                     })
                   }
-                  placeholder='e.g. Dhiraj Patil'
+                  placeholder='e.g. Alex Morgan'
                   className='h-10 text-xs'
                 />
               </div>

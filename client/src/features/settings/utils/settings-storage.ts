@@ -20,8 +20,8 @@ export const DEFAULT_PAYMENT_PROFILES: PaymentProfile[] = [
     type: 'upi',
     currency: 'INR',
     isDefault: false,
-    upiId: 'dhiraj@okhdfcbank',
-    details: 'UPI ID: dhiraj@okhdfcbank\nPayable via GPay, PhonePe, Paytm, or BHIM',
+    upiId: 'freelancer@upi',
+    details: 'UPI ID: freelancer@upi\nPayable via GPay, PhonePe, Paytm, or BHIM',
   },
   {
     id: 'pay-3',

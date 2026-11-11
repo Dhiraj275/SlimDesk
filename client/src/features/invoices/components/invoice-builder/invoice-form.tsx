@@ -814,7 +814,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         businessName: e.target.value,
                       })
                     }
-                    placeholder='e.g. Dhiraj Prajapati or Studio Name'
+                    placeholder='e.g. Alex Morgan / Design Studio'
                     className='h-9 text-xs'
                   />
                 </div>
