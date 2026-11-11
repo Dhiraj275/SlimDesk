@@ -31,7 +31,7 @@ export class BusinessProfile {
     example: 'Slimdesk Studio',
     description: 'Commercial brand or business name',
   })
-  @Column({ type: 'varchar', length: 150, default: 'My Freelance Studio' })
+  @Column({ type: 'varchar', length: 150, default: '' })
   businessName: string;
 
   @ApiPropertyOptional({

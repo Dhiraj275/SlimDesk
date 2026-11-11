@@ -69,9 +69,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
   );
   const [dueDate, setDueDate] = useState(
     initialData?.dueDate ||
-      new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0]
+    new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0]
   );
   const [taxMode, setTaxMode] = useState<TaxMode>(
     initialData?.taxMode || 'none'

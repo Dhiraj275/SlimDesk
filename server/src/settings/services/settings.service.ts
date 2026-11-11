@@ -49,7 +49,7 @@ export class SettingsService {
     if (!profile) {
       profile = this.profileRepository.create({
         userId,
-        businessName: 'My Freelance Studio',
+        businessName: '',
       });
       profile = await this.profileRepository.save(profile);
     }

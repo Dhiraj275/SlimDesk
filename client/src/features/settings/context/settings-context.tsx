@@ -84,17 +84,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
           const bp = profileRes.value;
           updated.businessProfile = {
             ...prev.businessProfile,
-            businessName: bp.businessName || prev.businessProfile.businessName,
-            legalName: bp.legalName || prev.businessProfile.legalName,
-            email: bp.email || prev.businessProfile.email,
-            phone: bp.phone || prev.businessProfile.phone,
-            address: bp.address || prev.businessProfile.address,
-            city: bp.city || prev.businessProfile.city,
-            state: bp.state || prev.businessProfile.state,
-            postalCode: bp.postalCode || prev.businessProfile.postalCode,
-            country: bp.country || prev.businessProfile.country,
-            website: bp.website || prev.businessProfile.website,
-            gstin: bp.gstin || prev.businessProfile.gstin,
+            businessName: bp.businessName ?? prev.businessProfile.businessName ?? '',
+            legalName: bp.legalName ?? prev.businessProfile.legalName ?? '',
+            email: bp.email ?? prev.businessProfile.email ?? '',
+            phone: bp.phone ?? prev.businessProfile.phone ?? '',
+            address: bp.address ?? prev.businessProfile.address ?? '',
+            city: bp.city ?? prev.businessProfile.city ?? '',
+            state: bp.state ?? prev.businessProfile.state ?? '',
+            postalCode: bp.postalCode ?? prev.businessProfile.postalCode ?? '',
+            country: bp.country ?? prev.businessProfile.country ?? 'India',
+            website: bp.website ?? prev.businessProfile.website ?? '',
+            gstin: bp.gstin ?? prev.businessProfile.gstin ?? '',
           };
 
           updated.branding = {

@@ -99,7 +99,7 @@ describe('SettingsService', () => {
 
       const profile = await service.getProfile('user-1');
 
-      expect(profile.businessName).toBe('My Freelance Studio');
+      expect(profile.businessName).toBe('');
       expect(mockProfileRepo.save).toHaveBeenCalled();
     });
 

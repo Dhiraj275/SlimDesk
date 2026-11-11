@@ -115,26 +115,26 @@ export const DEFAULT_SNIPPETS: DocumentSnippet[] = [
 
 export const INITIAL_SETTINGS: SettingsState = {
   businessProfile: {
-    businessName: 'SlimDesk Studio',
-    legalName: 'SlimDesk Creative Studio LLP',
-    email: 'hello@slimdesk.studio',
-    phone: '+91 98765 43210',
-    address: '402, High Street Towers, Nariman Point, Mumbai 400021, India',
-    gstin: '27AABCU9603R1ZM',
-    state: 'Maharashtra',
-    website: 'https://slimdesk.studio',
+    businessName: '',
+    legalName: '',
+    email: '',
+    phone: '',
+    address: '',
+    gstin: '',
+    state: '',
+    website: '',
   },
   branding: {
     logoUrl: '',
     signatureUrl: '',
     signatureType: 'text',
-    signatureText: 'Dhiraj Patil',
+    signatureText: '',
     brandColor: '#2563eb',
   },
-  paymentProfiles: DEFAULT_PAYMENT_PROFILES,
+  paymentProfiles: [],
   financialDefaults: {
     defaultCurrency: 'INR',
-    defaultTaxMode: 'gst',
+    defaultTaxMode: 'none',
     defaultTaxRate: 18,
     dateFormat: 'DD/MM/YYYY',
     defaultDueDateDays: 14,
@@ -148,8 +148,8 @@ export const INITIAL_SETTINGS: SettingsState = {
     nextReceiptNumber: 1,
     format: '{PREFIX}-{YEAR}-{NUM}',
   },
-  servicesCatalog: DEFAULT_SERVICES,
-  snippets: DEFAULT_SNIPPETS,
+  servicesCatalog: [],
+  snippets: [],
   quotationAllocations: [],
 };
 
@@ -159,6 +159,48 @@ export const loadStoredSettings = (): SettingsState => {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (!raw) return INITIAL_SETTINGS;
     const parsed = JSON.parse(raw);
+
+    // Sanitize any stale dummy strings from earlier versions
+    if (parsed.businessProfile) {
+      if (parsed.businessProfile.legalName === 'SlimDesk Creative Studio LLP') {
+        parsed.businessProfile.legalName = '';
+      }
+      if (parsed.businessProfile.email === 'hello@slimdesk.studio') {
+        parsed.businessProfile.email = '';
+      }
+      if (
+        parsed.businessProfile.businessName === 'SlimDesk Studio' ||
+        parsed.businessProfile.businessName === 'My Freelance Studio'
+      ) {
+        parsed.businessProfile.businessName = '';
+      }
+      if (parsed.businessProfile.phone === '+91 98765 43210') {
+        parsed.businessProfile.phone = '';
+      }
+      if (parsed.businessProfile.address?.includes('High Street Towers')) {
+        parsed.businessProfile.address = '';
+      }
+      if (parsed.businessProfile.gstin === '27AABCU9603R1ZM') {
+        parsed.businessProfile.gstin = '';
+      }
+      if (parsed.businessProfile.website === 'https://slimdesk.studio') {
+        parsed.businessProfile.website = '';
+      }
+    }
+    if (parsed.branding?.signatureText === 'Dhiraj Patil') {
+      parsed.branding.signatureText = '';
+    }
+    if (
+      Array.isArray(parsed.paymentProfiles) &&
+      parsed.paymentProfiles.some(
+        (p: any) =>
+          p.accountNumber === '50200087654321' ||
+          p.upiId === 'dhiraj@okhdfcbank'
+      )
+    ) {
+      parsed.paymentProfiles = [];
+    }
+
     return {
       ...INITIAL_SETTINGS,
       ...parsed,
@@ -166,9 +208,9 @@ export const loadStoredSettings = (): SettingsState => {
       branding: { ...INITIAL_SETTINGS.branding, ...parsed.branding },
       financialDefaults: { ...INITIAL_SETTINGS.financialDefaults, ...parsed.financialDefaults },
       numbering: { ...INITIAL_SETTINGS.numbering, ...parsed.numbering },
-      paymentProfiles: parsed.paymentProfiles || DEFAULT_PAYMENT_PROFILES,
-      servicesCatalog: parsed.servicesCatalog || DEFAULT_SERVICES,
-      snippets: parsed.snippets || DEFAULT_SNIPPETS,
+      paymentProfiles: parsed.paymentProfiles || [],
+      servicesCatalog: parsed.servicesCatalog || [],
+      snippets: parsed.snippets || [],
       quotationAllocations: parsed.quotationAllocations || [],
     };
   } catch (e) {

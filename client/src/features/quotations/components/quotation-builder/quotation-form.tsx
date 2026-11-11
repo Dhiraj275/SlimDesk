@@ -71,9 +71,9 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
   );
   const [expiryDate, setExpiryDate] = useState(
     initialData?.expiryDate ||
-      new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0]
+    new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0]
   );
   const [taxMode, setTaxMode] = useState<TaxMode>(
     initialData?.taxMode || 'none'
@@ -126,33 +126,33 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
 
   const [placeOfSupply, setPlaceOfSupply] = useState(
     initialData?.taxDetails?.placeOfSupply ||
-      initialData?.clientInfo?.state ||
-      'Maharashtra'
+    initialData?.clientInfo?.state ||
+    'Maharashtra'
   );
 
   // Line items
   const [items, setItems] = useState<FormItemInput[]>(
     initialData?.items && initialData.items.length > 0
       ? initialData.items.map((i) => ({
-          description: i.description,
-          quantity: i.quantity,
-          unit: i.unit || 'units',
-          unitPrice: i.unitPrice,
-          discount: i.discount || 0,
-          taxRate: i.taxRate || 0,
-          sortOrder: i.sortOrder || 0,
-        }))
+        description: i.description,
+        quantity: i.quantity,
+        unit: i.unit || 'units',
+        unitPrice: i.unitPrice,
+        discount: i.discount || 0,
+        taxRate: i.taxRate || 0,
+        sortOrder: i.sortOrder || 0,
+      }))
       : [
-          {
-            description: '',
-            quantity: 1,
-            unit: 'units',
-            unitPrice: '',
-            discount: 0,
-            taxRate: 0,
-            sortOrder: 0,
-          },
-        ]
+        {
+          description: '',
+          quantity: 1,
+          unit: 'units',
+          unitPrice: '',
+          discount: 0,
+          taxRate: 0,
+          sortOrder: 0,
+        },
+      ]
   );
 
   // Terms & Payment schedule
@@ -210,7 +210,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
       .then((data) => {
         setContacts(data || []);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleContactSelect = (contactId: string) => {
