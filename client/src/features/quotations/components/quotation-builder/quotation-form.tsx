@@ -655,6 +655,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                   <Input
                     type='number'
                     min='0'
+                    placeholder='0.00'
                     value={overallDiscount}
                     onChange={(e) =>
                       setOverallDiscount(parseFloat(e.target.value) || 0)
@@ -735,6 +736,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                 <div className='space-y-1.5'>
                   <Label className='text-xs font-medium'>Your Name / Brand</Label>
                   <Input
+                    placeholder='e.g. Dhiraj Prajapati or Studio Name'
                     value={freelancerInfo.name}
                     onChange={(e) =>
                       setFreelancerInfo({
@@ -748,6 +750,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                 <div className='space-y-1.5'>
                   <Label className='text-xs font-medium'>Studio / Company (Optional)</Label>
                   <Input
+                    placeholder='e.g. Acme Design Studio LLP'
                     value={freelancerInfo.businessName || ''}
                     onChange={(e) =>
                       setFreelancerInfo({
@@ -762,6 +765,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                   <Label className='text-xs font-medium'>Your Email</Label>
                   <Input
                     type='email'
+                    placeholder='e.g. hello@yourdomain.com'
                     value={freelancerInfo.email || ''}
                     onChange={(e) =>
                       setFreelancerInfo({
