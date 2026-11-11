@@ -332,7 +332,10 @@ describe('LeadsService', () => {
 
       expect(followUp.followUpId).toBe('followup-uuid-1');
       expect(lead.nextFollowUpDate).toEqual(new Date('2026-11-10T12:00:00.000Z'));
-      expect(mockLeadsRepo.save).toHaveBeenCalledWith(lead);
+      expect(mockLeadsRepo.update).toHaveBeenCalledWith(
+        { leadId: 'lead-1', userId: 'user-1' },
+        { nextFollowUpDate: new Date('2026-11-10T12:00:00.000Z') },
+      );
     });
 
     it('should complete follow-up and update next follow-up date', async () => {
@@ -392,7 +395,10 @@ describe('LeadsService', () => {
 
       expect(activity.activityId).toBe('activity-uuid-1');
       expect(lead.lastContactedDate).toBeDefined();
-      expect(mockLeadsRepo.save).toHaveBeenCalledWith(lead);
+      expect(mockLeadsRepo.update).toHaveBeenCalledWith(
+        { leadId: 'lead-1', userId: 'user-1' },
+        { lastContactedDate: expect.any(Date) },
+      );
     });
   });
 

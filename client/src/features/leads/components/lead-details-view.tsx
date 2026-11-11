@@ -648,7 +648,8 @@ export function LeadDetailsView({
         lead={lead}
         open={activityDialogOpen}
         onOpenChange={setActivityDialogOpen}
-        onSuccess={reloadLead}
+        initialType={ActivityType.NOTE}
+        onSuccess={() => reloadLead()}
       />
     </div>
   );

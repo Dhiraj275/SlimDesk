@@ -345,7 +345,10 @@ export class LeadsService {
 
     // Update lastContactedDate on the lead
     lead.lastContactedDate = performedAt;
-    await this.leadsRepository.save(lead);
+    await this.leadsRepository.update(
+      { leadId, userId },
+      { lastContactedDate: performedAt },
+    );
 
     return savedActivity;
   }
@@ -380,7 +383,10 @@ export class LeadsService {
     // Update lead nextFollowUpDate if null or if this is sooner
     if (!lead.nextFollowUpDate || dueDate < lead.nextFollowUpDate) {
       lead.nextFollowUpDate = dueDate;
-      await this.leadsRepository.save(lead);
+      await this.leadsRepository.update(
+        { leadId, userId },
+        { nextFollowUpDate: dueDate },
+      );
     }
 
     // Record timeline activity

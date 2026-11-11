@@ -187,13 +187,13 @@ export class Lead {
     type: () => [LeadActivity],
     description: 'Chronological timeline of activities on this lead',
   })
-  @OneToMany(() => LeadActivity, (activity) => activity.lead, { cascade: true })
+  @OneToMany(() => LeadActivity, (activity) => activity.lead, { cascade: ['insert'] })
   activities: LeadActivity[];
 
   @ApiPropertyOptional({
     type: () => [LeadFollowUp],
     description: 'Scheduled follow-ups associated with this lead',
   })
-  @OneToMany(() => LeadFollowUp, (followUp) => followUp.lead, { cascade: true })
+  @OneToMany(() => LeadFollowUp, (followUp) => followUp.lead, { cascade: ['insert'] })
   followUps: LeadFollowUp[];
 }

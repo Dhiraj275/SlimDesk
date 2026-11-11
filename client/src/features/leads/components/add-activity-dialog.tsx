@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -37,10 +37,10 @@ const ACTIVITY_OPTIONS: {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
+  { type: ActivityType.NOTE, label: 'Internal Note', icon: IconNote },
   { type: ActivityType.CALL, label: 'Call Log', icon: IconPhone },
   { type: ActivityType.EMAIL, label: 'Email Interaction', icon: IconMail },
   { type: ActivityType.MEETING, label: 'Meeting', icon: IconCalendarEvent },
-  { type: ActivityType.NOTE, label: 'Internal Note', icon: IconNote },
   { type: ActivityType.QUOTATION, label: 'Quotation / Scope Note', icon: IconFileInvoice },
 ];
 
@@ -48,24 +48,45 @@ export function AddActivityDialog({
   lead,
   open,
   onOpenChange,
+  initialType = ActivityType.NOTE,
   onSuccess,
 }: {
   lead: Lead | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialType?: ActivityType;
   onSuccess?: (activity: LeadActivity) => void;
 }) {
   const [loading, setLoading] = useState(false);
-  const [type, setType] = useState<ActivityType>(ActivityType.CALL);
+  const [type, setType] = useState<ActivityType>(initialType);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      setType(initialType);
+      setTitle('');
+      setDescription('');
+    }
+  }, [open, initialType]);
 
   if (!lead) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      toast.error('Activity title or summary is required');
+
+    const descTrimmed = description.trim();
+    let finalTitle = title.trim();
+
+    if (!finalTitle && descTrimmed) {
+      finalTitle =
+        descTrimmed.length > 50
+          ? `${descTrimmed.slice(0, 47)}...`
+          : descTrimmed;
+    }
+
+    if (!finalTitle) {
+      toast.error('Please enter a note or summary title');
       return;
     }
 
@@ -73,11 +94,15 @@ export function AddActivityDialog({
     try {
       const created = await leadsApi.addActivity(lead.leadId, {
         type,
-        title: title.trim(),
-        description: description.trim() || undefined,
+        title: finalTitle,
+        description: descTrimmed || undefined,
       });
 
-      toast.success('Activity logged to timeline');
+      toast.success(
+        type === ActivityType.NOTE
+          ? 'Note logged to timeline'
+          : 'Activity logged to timeline'
+      );
       setTitle('');
       setDescription('');
       onOpenChange(false);
@@ -93,7 +118,9 @@ export function AddActivityDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
-          <DialogTitle className='text-lg font-bold'>Log Interaction</DialogTitle>
+          <DialogTitle className='text-lg font-bold'>
+            {type === ActivityType.NOTE ? 'Log Note' : 'Log Interaction'}
+          </DialogTitle>
           <DialogDescription>
             Record communication or progress with <strong className='text-foreground'>{lead.name}</strong>.
           </DialogDescription>
@@ -121,23 +148,35 @@ export function AddActivityDialog({
 
           <div className='space-y-1.5'>
             <Label htmlFor='activity-title'>
-              Summary Title <span className='text-destructive'>*</span>
+              Summary Title{' '}
+              <span className='text-xs text-muted-foreground font-normal'>
+                (Optional if note details are provided)
+              </span>
             </Label>
             <Input
               id='activity-title'
-              placeholder='e.g. Discussed budget constraints with CTO'
+              placeholder={
+                type === ActivityType.NOTE
+                  ? 'e.g. Client confirmed timeline / Technical requirements'
+                  : 'e.g. Discussed budget constraints with CTO'
+              }
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              required
             />
           </div>
 
           <div className='space-y-1.5'>
-            <Label htmlFor='activity-desc'>Details & Notes</Label>
+            <Label htmlFor='activity-desc'>
+              {type === ActivityType.NOTE ? 'Note Details' : 'Details & Notes'}
+            </Label>
             <Textarea
               id='activity-desc'
-              rows={3}
-              placeholder='Key takeaways, next deliverables, or client feedback...'
+              rows={4}
+              placeholder={
+                type === ActivityType.NOTE
+                  ? 'Write your note here...'
+                  : 'Key takeaways, next deliverables, or client feedback...'
+              }
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -158,6 +197,8 @@ export function AddActivityDialog({
                   <IconLoader2 className='mr-2 h-4 w-4 animate-spin' />
                   Logging...
                 </>
+              ) : type === ActivityType.NOTE ? (
+                'Save Note'
               ) : (
                 'Save to Timeline'
               )}
