@@ -23,6 +23,8 @@ import {
 } from '@/shared/components/ui/select';
 import { useSettings } from '../context/settings-context';
 import { ServiceItem } from '../types/settings.types';
+import { serviceItemSchema } from '../schemas/settings.schema';
+import { toast } from 'sonner';
 import {
   IconBriefcase,
   IconPlus,
@@ -88,7 +90,11 @@ export const ServicesCatalogTab: React.FC = () => {
   };
 
   const handleSave = () => {
-    if (!form.name.trim()) return;
+    const validation = serviceItemSchema.safeParse(form);
+    if (!validation.success) {
+      toast.error(validation.error.issues[0]?.message || 'Please check service item fields');
+      return;
+    }
     if (editingId) {
       updateServiceItem(editingId, form);
     } else {

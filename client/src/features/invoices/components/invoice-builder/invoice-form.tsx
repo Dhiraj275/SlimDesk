@@ -18,6 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { InvoiceLineItemsEditor } from './invoice-line-items-editor';
 import { InvoiceDocument } from '../invoice-preview/invoice-document';
 import { calculateInvoiceSummary, FormInvoiceItemInput } from '../../utils/invoice-calc';
+import { invoicePayloadSchema } from '../../schemas/invoice.schema';
 import { invoicesApi } from '../../api/invoices.api';
 import { contactsApi } from '@/features/contacts/api/contacts.api';
 import { Contact } from '@/features/contacts/types/contact.types';
@@ -229,32 +230,36 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   // Save invoice
   const handleSave = async (autoIssue: boolean = false) => {
-    if (!title.trim()) {
-      toast.error('Please enter an invoice title');
-      return;
-    }
-
-    if (!clientInfo.name.trim()) {
-      toast.error('Please specify client name');
-      return;
-    }
-
-    if (items.length === 0 || !items.some((i) => i.description.trim())) {
-      toast.error('Please add at least one line item with a description');
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const itemsPayload = summary.items.map((it, idx) => ({
+    const itemsPayload = summary.items
+      .filter((it) => it.description.trim() || Number(it.unitPrice) > 0)
+      .map((it, idx) => ({
         description: it.description.trim(),
         quantity: it.quantity,
-        unit: it.unit,
+        unit: it.unit || 'units',
         unitPrice: it.unitPrice,
         discountAmount: it.discountAmount,
         taxRate: it.taxRate,
         sortOrder: it.sortOrder ?? idx,
       }));
+
+    const validation = invoicePayloadSchema.safeParse({
+      title,
+      clientInfo,
+      issueDate,
+      dueDate,
+      currency,
+      taxMode,
+      discountAmount: summary.discountAmount,
+      items: itemsPayload,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.issues[0]?.message || 'Please check invoice form inputs');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
 
       let saved: Invoice;
 

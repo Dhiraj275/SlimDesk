@@ -1,16 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../providers/auth-provider';
 import { registerUser } from '../api/auth.api';
 import { ApiError } from '@/shared/utils/api-error';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
-import { Label } from '@/shared/components/ui/label';
 import {
-  Card,
-  CardContent,
-} from '@/shared/components/ui/card';
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/shared/components/ui/form';
+import { Card, CardContent } from '@/shared/components/ui/card';
 import { cn } from '@/shared/utils/utils';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -26,6 +32,7 @@ import {
   IconAlertCircle,
   IconCheck,
 } from '@tabler/icons-react';
+import { registerSchema, RegisterFormValues } from '../schemas/auth.schema';
 
 const PASSWORD_REQUIREMENTS = [
   { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
@@ -37,38 +44,34 @@ const PASSWORD_REQUIREMENTS = [
 export default function RegisterForm() {
   const router = useRouter();
   const { login } = useAuth();
-  const [error, setError] = useState<string | null>();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [focusedPassword, setFocusedPassword] = useState(false);
 
-  const handleRegister = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      displayName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+    mode: 'onTouched',
+  });
+
+  const password = form.watch('password') || '';
+
+  const onSubmit = async (values: RegisterFormValues) => {
     setError(null);
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      toast.error('Password must be at least 8 characters long');
-      return;
-    }
-
     setLoading(true);
+
     try {
       const response = await registerUser({
-        displayName: fullName,
-        email,
-        password,
+        displayName: values.displayName.trim(),
+        email: values.email.trim(),
+        password: values.password,
       });
       await login(response);
       toast.success('Account created successfully!');
@@ -101,7 +104,6 @@ export default function RegisterForm() {
     <div className='flex w-full max-w-md flex-col gap-6'>
       {/* Header */}
       <div className='space-y-2 text-center'>
-        {/* Mobile only logo */}
         <div className='mb-6 flex items-center justify-center gap-3 lg:hidden'>
           <Image
             src='/assets/logo.png'
@@ -124,7 +126,6 @@ export default function RegisterForm() {
 
       <Card className='border-border/50 shadow-xl backdrop-blur-sm'>
         <CardContent className='pt-6'>
-          {/* Error */}
           {error && (
             <div className='mb-4 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive'>
               <IconAlertCircle className='h-4 w-4 shrink-0' />
@@ -132,171 +133,189 @@ export default function RegisterForm() {
             </div>
           )}
 
-          <form onSubmit={handleRegister} className='space-y-4'>
+          <Form form={form} onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
             {/* Full Name */}
-            <div className='space-y-2'>
-              <Label htmlFor='register-name'>Full Name</Label>
-              <div className='relative'>
-                <IconUser className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-                <Input
-                  id='register-name'
-                  type='text'
-                  placeholder='John Doe'
-                  className='pl-9'
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name='displayName'
+              render={({ field }) => (
+                <FormItem className='space-y-1.5'>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <div className='relative'>
+                      <IconUser className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                      <Input
+                        type='text'
+                        placeholder='John Doe'
+                        className='pl-9'
+                        autoComplete='name'
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage className='text-xs' />
+                </FormItem>
+              )}
+            />
 
             {/* Email */}
-            <div className='space-y-2'>
-              <Label htmlFor='register-email'>Email</Label>
-              <div className='relative'>
-                <IconMail className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-                <Input
-                  id='register-email'
-                  type='email'
-                  placeholder='name@example.com'
-                  className='pl-9'
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name='email'
+              render={({ field }) => (
+                <FormItem className='space-y-1.5'>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <div className='relative'>
+                      <IconMail className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                      <Input
+                        type='email'
+                        placeholder='name@example.com'
+                        className='pl-9'
+                        autoComplete='email'
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage className='text-xs' />
+                </FormItem>
+              )}
+            />
 
             {/* Password */}
-            <div className='space-y-2'>
-              <Label htmlFor='register-password'>Password</Label>
-              <div className='relative'>
-                <IconLock className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-                <Input
-                  id='register-password'
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder='Create a password'
-                  className='pl-9 pr-9'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setFocusedPassword(true)}
-                  onBlur={() => setFocusedPassword(false)}
-                  required
-                />
-                <button
-                  type='button'
-                  onClick={() => setShowPassword(!showPassword)}
-                  className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors'
-                >
-                  {showPassword ? (
-                    <IconEyeOff className='h-4 w-4' />
-                  ) : (
-                    <IconEye className='h-4 w-4' />
-                  )}
-                </button>
-              </div>
-
-              {/* Password strength indicator */}
-              {password.length > 0 && (
-                <div className='space-y-2'>
-                  <div className='flex items-center gap-2'>
-                    <div className='flex flex-1 gap-1'>
-                      {[...Array(4)].map((_, i) => (
-                        <div
-                          key={i}
-                          className={cn(
-                            'h-1 flex-1 rounded-full transition-all duration-300',
-                            i < passwordStrength
-                              ? strengthColors[passwordStrength]
-                              : 'bg-muted'
-                          )}
-                        />
-                      ))}
+            <FormField
+              control={form.control}
+              name='password'
+              render={({ field }) => (
+                <FormItem className='space-y-1.5'>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <div className='relative'>
+                      <IconLock className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                      <Input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder='Create a password'
+                        className='pl-9 pr-9'
+                        autoComplete='new-password'
+                        {...field}
+                        onFocus={() => setFocusedPassword(true)}
+                        onBlur={() => setFocusedPassword(false)}
+                      />
+                      <button
+                        type='button'
+                        onClick={() => setShowPassword(!showPassword)}
+                        className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors'
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? (
+                          <IconEyeOff className='h-4 w-4' />
+                        ) : (
+                          <IconEye className='h-4 w-4' />
+                        )}
+                      </button>
                     </div>
-                    <span
-                      className={cn(
-                        'text-xs font-medium',
-                        passwordStrength <= 1
-                          ? 'text-destructive'
-                          : passwordStrength <= 3
-                            ? 'text-yellow-600 dark:text-yellow-400'
-                            : 'text-green-600 dark:text-green-400'
-                      )}
-                    >
-                      {strengthLabels[passwordStrength]}
-                    </span>
-                  </div>
+                  </FormControl>
+                  <FormMessage className='text-xs' />
 
-                  {/* Requirements checklist */}
-                  {(focusedPassword || passwordStrength < 4) && (
-                    <div className='grid grid-cols-2 gap-1'>
-                      {PASSWORD_REQUIREMENTS.map((req) => {
-                        const met = req.test(password);
-                        return (
-                          <div
-                            key={req.label}
-                            className={cn(
-                              'flex items-center gap-1.5 text-xs transition-colors',
-                              met
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-muted-foreground'
-                            )}
-                          >
-                            <IconCheck
+                  {/* Password strength indicator */}
+                  {password.length > 0 && (
+                    <div className='space-y-2 pt-1'>
+                      <div className='flex items-center gap-2'>
+                        <div className='flex flex-1 gap-1'>
+                          {[...Array(4)].map((_, i) => (
+                            <div
+                              key={i}
                               className={cn(
-                                'h-3 w-3 shrink-0 transition-all',
-                                met ? 'opacity-100' : 'opacity-30'
+                                'h-1 flex-1 rounded-full transition-all duration-300',
+                                i < passwordStrength
+                                  ? strengthColors[passwordStrength]
+                                  : 'bg-muted'
                               )}
                             />
-                            <span>{req.label}</span>
-                          </div>
-                        );
-                      })}
+                          ))}
+                        </div>
+                        <span
+                          className={cn(
+                            'text-xs font-medium',
+                            passwordStrength <= 1
+                              ? 'text-destructive'
+                              : passwordStrength <= 3
+                                ? 'text-yellow-600 dark:text-yellow-400'
+                                : 'text-green-600 dark:text-green-400'
+                          )}
+                        >
+                          {strengthLabels[passwordStrength]}
+                        </span>
+                      </div>
+
+                      {/* Requirements checklist */}
+                      {(focusedPassword || passwordStrength < 4) && (
+                        <div className='grid grid-cols-2 gap-1 pt-1'>
+                          {PASSWORD_REQUIREMENTS.map((req) => {
+                            const met = req.test(password);
+                            return (
+                              <div
+                                key={req.label}
+                                className={cn(
+                                  'flex items-center gap-1.5 text-xs transition-colors',
+                                  met
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : 'text-muted-foreground'
+                                )}
+                              >
+                                <IconCheck
+                                  className={cn(
+                                    'h-3 w-3 shrink-0 transition-all',
+                                    met ? 'opacity-100' : 'opacity-30'
+                                  )}
+                                />
+                                <span>{req.label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
+                </FormItem>
               )}
-            </div>
+            />
 
             {/* Confirm Password */}
-            <div className='space-y-2'>
-              <Label htmlFor='register-confirm-password'>
-                Confirm Password
-              </Label>
-              <div className='relative'>
-                <IconLock className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-                <Input
-                  id='register-confirm-password'
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder='Confirm your password'
-                  className={cn(
-                    'pl-9 pr-9',
-                    confirmPassword.length > 0 &&
-                      password !== confirmPassword &&
-                      'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30'
-                  )}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type='button'
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors'
-                >
-                  {showConfirmPassword ? (
-                    <IconEyeOff className='h-4 w-4' />
-                  ) : (
-                    <IconEye className='h-4 w-4' />
-                  )}
-                </button>
-              </div>
-              {confirmPassword.length > 0 && password !== confirmPassword && (
-                <p className='text-xs text-destructive'>
-                  Passwords do not match
-                </p>
+            <FormField
+              control={form.control}
+              name='confirmPassword'
+              render={({ field }) => (
+                <FormItem className='space-y-1.5'>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <div className='relative'>
+                      <IconLock className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                      <Input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder='Confirm your password'
+                        className='pl-9 pr-9'
+                        autoComplete='new-password'
+                        {...field}
+                      />
+                      <button
+                        type='button'
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors'
+                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showConfirmPassword ? (
+                          <IconEyeOff className='h-4 w-4' />
+                        ) : (
+                          <IconEye className='h-4 w-4' />
+                        )}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage className='text-xs' />
+                </FormItem>
               )}
-            </div>
+            />
 
             <Button
               type='submit'
@@ -306,18 +325,17 @@ export default function RegisterForm() {
             >
               {loading ? (
                 <>
-                  <IconLoader2 className='h-4 w-4 animate-spin' />
+                  <IconLoader2 className='h-4 w-4 animate-spin mr-2' />
                   Creating account...
                 </>
               ) : (
                 'Create account'
               )}
             </Button>
-          </form>
+          </Form>
         </CardContent>
       </Card>
 
-      {/* Footer */}
       <p className='text-center text-sm text-muted-foreground'>
         Already have an account?{' '}
         <Link

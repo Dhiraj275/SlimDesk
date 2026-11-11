@@ -22,6 +22,7 @@ import {
 } from '@/shared/components/ui/select';
 import { Invoice, PaymentMethod } from '../types/invoice.types';
 import { invoicesApi } from '../api/invoices.api';
+import { recordPaymentSchema } from '../schemas/invoice.schema';
 import { toast } from 'sonner';
 import {
   IconReceipt2,
@@ -82,8 +83,16 @@ export const RecordPaymentDialog: React.FC<RecordPaymentDialogProps> = ({
     e.preventDefault();
     const numAmount = parseFloat(amount);
 
-    if (isNaN(numAmount) || numAmount <= 0) {
-      toast.error('Please enter a valid positive payment amount');
+    const parseResult = recordPaymentSchema.safeParse({
+      amount: numAmount,
+      paymentMethod,
+      paymentDate,
+      referenceNumber,
+      notes,
+    });
+
+    if (!parseResult.success) {
+      toast.error(parseResult.error.issues[0]?.message || 'Invalid payment details');
       return;
     }
 
@@ -91,11 +100,6 @@ export const RecordPaymentDialog: React.FC<RecordPaymentDialogProps> = ({
       toast.error(
         `Payment amount (${formatCurrency(numAmount)}) cannot exceed outstanding balance (${formatCurrency(outstanding)})`
       );
-      return;
-    }
-
-    if (!paymentDate) {
-      toast.error('Please select the payment date');
       return;
     }
 

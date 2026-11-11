@@ -15,6 +15,9 @@ import {
 import { useSettings } from '../context/settings-context';
 import { IconBuilding, IconDeviceFloppy } from '@tabler/icons-react';
 
+import { businessProfileSchema } from '../schemas/settings.schema';
+import { toast } from 'sonner';
+
 const INDIAN_STATES = [
   'Andhra Pradesh',
   'Arunachal Pradesh',
@@ -51,6 +54,11 @@ export const BusinessProfileTab: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validation = businessProfileSchema.safeParse(form);
+    if (!validation.success) {
+      toast.error(validation.error.issues[0]?.message || 'Please check business profile details');
+      return;
+    }
     updateBusinessProfile(form);
   };
 

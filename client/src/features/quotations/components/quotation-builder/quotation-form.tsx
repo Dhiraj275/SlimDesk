@@ -20,6 +20,7 @@ import { TermsAndPaymentCard } from './terms-and-payment-card';
 import { QuotationDocument } from '../quotation-preview/quotation-document';
 import { PdfActionsMenu } from '../../pdf/pdf-actions-menu';
 import { calculateQuotationSummary, FormItemInput } from '../../utils/quotation-calc';
+import { quotationPayloadSchema } from '../../schemas/quotation.schema';
 import { quotationsApi } from '../../api/quotations.api';
 import { contactsApi } from '@/features/contacts/api/contacts.api';
 import { Contact } from '@/features/contacts/types/contact.types';
@@ -234,16 +235,31 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
 
   // Handle Save
   const handleSave = async (andSend = false) => {
-    if (!title.trim()) {
-      toast.error('Please enter a quotation title');
-      return;
-    }
-    if (!clientInfo.name.trim()) {
-      toast.error('Please enter client name');
-      return;
-    }
-    if (items.length === 0 || !items.some((i) => i.description.trim())) {
-      toast.error('Please add at least one line item with description');
+    const itemsPayload = items
+      .filter((i) => i.description.trim() || Number(i.unitPrice) > 0)
+      .map((i, idx) => ({
+        description: i.description.trim(),
+        quantity: Math.max(0.01, Number(i.quantity) || 1),
+        unit: i.unit || 'units',
+        unitPrice: Math.max(0, Number(i.unitPrice) || 0),
+        discount: Math.max(0, Number(i.discount) || 0),
+        taxRate: taxMode === 'none' ? 0 : Math.max(0, Number(i.taxRate) || 0),
+        sortOrder: idx,
+      }));
+
+    const validation = quotationPayloadSchema.safeParse({
+      title,
+      clientInfo,
+      issueDate,
+      expiryDate,
+      currency,
+      taxMode,
+      discountAmount: Number(overallDiscount) || 0,
+      items: itemsPayload,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.issues[0]?.message || 'Please check quotation form inputs');
       return;
     }
 
@@ -263,17 +279,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
         paymentSchedule,
         terms,
         notes,
-        items: items
-          .filter((i) => i.description.trim() || Number(i.unitPrice) > 0)
-          .map((i, idx) => ({
-            description: i.description.trim() || `Deliverable ${idx + 1}`,
-            quantity: Math.max(0.01, Number(i.quantity) || 1),
-            unit: i.unit || 'units',
-            unitPrice: Math.max(0, Number(i.unitPrice) || 0),
-            discount: Math.max(0, Number(i.discount) || 0),
-            taxRate: taxMode === 'none' ? 0 : Math.max(0, Number(i.taxRate) || 0),
-            sortOrder: idx,
-          })),
+        items: itemsPayload,
       };
 
       let saved: Quotation;

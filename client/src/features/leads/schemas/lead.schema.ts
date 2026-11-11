@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LeadSource } from '../types/lead.types';
+import { LeadSource, ActivityType } from '../types/lead.types';
 
 export const createLeadSchema = z.object({
   name: z
@@ -69,3 +69,20 @@ export const createLeadSchema = z.object({
 });
 
 export type CreateLeadFormValues = z.infer<typeof createLeadSchema>;
+
+export const addActivitySchema = z.object({
+  type: z.nativeEnum(ActivityType),
+  title: z
+    .string()
+    .trim()
+    .min(1, 'Please enter a note or summary title')
+    .max(200, 'Title must be 200 characters or less'),
+  description: z
+    .string()
+    .trim()
+    .max(5000, 'Description must be 5000 characters or less')
+    .optional()
+    .or(z.literal('')),
+});
+
+export type AddActivityFormValues = z.infer<typeof addActivitySchema>;

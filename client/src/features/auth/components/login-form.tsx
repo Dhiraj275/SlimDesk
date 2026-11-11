@@ -2,15 +2,21 @@
 
 import { loginUser } from '@/features/auth/api/auth.api';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../providers/auth-provider';
 import { ApiError } from '@/shared/utils/api-error';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
-import { Label } from '@/shared/components/ui/label';
 import {
-  Card,
-  CardContent,
-} from '@/shared/components/ui/card';
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/shared/components/ui/form';
+import { Card, CardContent } from '@/shared/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -23,23 +29,33 @@ import {
   IconLock,
   IconAlertCircle,
 } from '@tabler/icons-react';
+import { loginSchema, LoginFormValues } from '../schemas/auth.schema';
 
 export default function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
-  const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+    mode: 'onTouched',
+  });
+
+  const onSubmit = async (values: LoginFormValues) => {
     setError(null);
     setLoading(true);
 
     try {
-      const response = await loginUser({ email, password });
+      const response = await loginUser({
+        email: values.email.trim(),
+        password: values.password,
+      });
       await login(response);
       toast.success('Logged in successfully!');
       router.push('/dashboard');
@@ -57,7 +73,6 @@ export default function LoginForm() {
     <div className='flex w-full max-w-md flex-col gap-6'>
       {/* Header */}
       <div className='space-y-2 text-center'>
-        {/* Mobile only logo */}
         <div className='mb-6 flex items-center justify-center gap-3 lg:hidden'>
           <Image
             src='/assets/logo.png'
@@ -80,7 +95,6 @@ export default function LoginForm() {
 
       <Card className='border-border/50 shadow-xl backdrop-blur-sm'>
         <CardContent className='pt-6'>
-          {/* Error Banner */}
           {error && (
             <div className='mb-4 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive'>
               <IconAlertCircle className='h-4 w-4 shrink-0' />
@@ -88,55 +102,64 @@ export default function LoginForm() {
             </div>
           )}
 
-          {/* Email Login Form */}
-          <form onSubmit={handleLogin} className='space-y-4'>
-            <div className='space-y-2'>
-              <Label htmlFor='email'>Email</Label>
-              <div className='relative'>
-                <IconMail className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-                <Input
-                  id='email'
-                  type='email'
-                  placeholder='name@example.com'
-                  className='pl-9'
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete='email'
-                  required
-                />
-              </div>
-            </div>
+          <Form form={form} onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+            <FormField
+              control={form.control}
+              name='email'
+              render={({ field }) => (
+                <FormItem className='space-y-1.5'>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <div className='relative'>
+                      <IconMail className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                      <Input
+                        type='email'
+                        placeholder='name@example.com'
+                        className='pl-9'
+                        autoComplete='email'
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage className='text-xs' />
+                </FormItem>
+              )}
+            />
 
-            <div className='space-y-2'>
-              <div className='flex items-center justify-between'>
-                <Label htmlFor='password'>Password</Label>
-              </div>
-              <div className='relative'>
-                <IconLock className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-                <Input
-                  id='password'
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder='Enter your password'
-                  className='pl-9 pr-9'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete='current-password'
-                  required
-                />
-                <button
-                  type='button'
-                  onClick={() => setShowPassword(!showPassword)}
-                  className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors'
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? (
-                    <IconEyeOff className='h-4 w-4' />
-                  ) : (
-                    <IconEye className='h-4 w-4' />
-                  )}
-                </button>
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name='password'
+              render={({ field }) => (
+                <FormItem className='space-y-1.5'>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <div className='relative'>
+                      <IconLock className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+                      <Input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder='Enter your password'
+                        className='pl-9 pr-9'
+                        autoComplete='current-password'
+                        {...field}
+                      />
+                      <button
+                        type='button'
+                        onClick={() => setShowPassword(!showPassword)}
+                        className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors'
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? (
+                          <IconEyeOff className='h-4 w-4' />
+                        ) : (
+                          <IconEye className='h-4 w-4' />
+                        )}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage className='text-xs' />
+                </FormItem>
+              )}
+            />
 
             <Button
               type='submit'
@@ -146,18 +169,17 @@ export default function LoginForm() {
             >
               {loading ? (
                 <>
-                  <IconLoader2 className='h-4 w-4 animate-spin' />
+                  <IconLoader2 className='h-4 w-4 animate-spin mr-2' />
                   Signing in...
                 </>
               ) : (
                 'Sign in'
               )}
             </Button>
-          </form>
+          </Form>
         </CardContent>
       </Card>
 
-      {/* Footer */}
       <p className='text-center text-sm text-muted-foreground'>
         Don&apos;t have an account?{' '}
         <Link

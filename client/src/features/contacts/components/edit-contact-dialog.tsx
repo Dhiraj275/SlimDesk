@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
@@ -9,12 +11,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/shared/components/ui/form';
 import { Input } from '@/shared/components/ui/input';
 import { Button } from '@/shared/components/ui/button';
 import { Label } from '@/shared/components/ui/label';
 import { Switch } from '@/shared/components/ui/switch';
 import { Contact } from '../types/contact.types';
 import { contactsApi } from '../api/contacts.api';
+import { contactSchema, ContactFormValues } from '../schemas/contact.schema';
 import { toast } from 'sonner';
 import { IconLoader2 } from '@tabler/icons-react';
 
@@ -29,42 +40,46 @@ export function EditContactDialog({
   onOpenChange: (open: boolean) => void;
   onSuccess: (updated: Contact) => void;
 }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [company, setCompany] = useState('');
-  const [isClient, setIsClient] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (contact) {
-      setName(contact.name || '');
-      setEmail(contact.email || '');
-      setPhone(contact.phone || '');
-      setCompany(contact.company || '');
-      setIsClient(contact.isClient || false);
-    }
-  }, [contact]);
+  const form = useForm<ContactFormValues>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      company: '',
+      isClient: false,
+    },
+    mode: 'onTouched',
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!contact) return;
-    if (!name.trim()) {
-      toast.error('Contact name is required');
-      return;
+  useEffect(() => {
+    if (contact && open) {
+      form.reset({
+        name: contact.name || '',
+        email: contact.email || '',
+        phone: contact.phone || '',
+        company: contact.company || '',
+        isClient: contact.isClient || false,
+      });
     }
+  }, [contact, open, form]);
+
+  const onSubmit = async (values: ContactFormValues) => {
+    if (!contact) return;
 
     setSubmitting(true);
     try {
       const updated = await contactsApi.updateContact(contact.contactId, {
-        name: name.trim(),
-        email: email.trim() || undefined,
-        phone: phone.trim() || undefined,
-        company: company.trim() || undefined,
-        isClient,
+        name: values.name.trim(),
+        email: values.email?.trim() || undefined,
+        phone: values.phone?.trim() || undefined,
+        company: values.company?.trim() || undefined,
+        isClient: values.isClient,
       });
 
-      toast.success(`Contact "${name}" updated`);
+      toast.success(`Contact "${values.name}" updated`);
       onOpenChange(false);
       onSuccess(updated);
     } catch (err: any) {
@@ -86,65 +101,102 @@ export function EditContactDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className='space-y-4 pt-2'>
-          <div className='space-y-1.5'>
-            <Label htmlFor='edit-contact-name'>
-              Name <span className='text-rose-500'>*</span>
-            </Label>
-            <Input
-              id='edit-contact-name'
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
+        <Form form={form} onSubmit={form.handleSubmit(onSubmit)} className='space-y-4 pt-2'>
+          <FormField
+            control={form.control}
+            name='name'
+            render={({ field }) => (
+              <FormItem className='space-y-1.5'>
+                <FormLabel>
+                  Name <span className='text-rose-500'>*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder='e.g. Acme Studio or Sarah Connor' {...field} />
+                </FormControl>
+                <FormMessage className='text-xs' />
+              </FormItem>
+            )}
+          />
 
-          <div className='space-y-1.5'>
-            <Label htmlFor='edit-contact-company'>Company / Organization</Label>
-            <Input
-              id='edit-contact-company'
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name='company'
+            render={({ field }) => (
+              <FormItem className='space-y-1.5'>
+                <FormLabel>Company / Organization</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder='e.g. Acme Studio Inc.'
+                    {...field}
+                    value={field.value || ''}
+                  />
+                </FormControl>
+                <FormMessage className='text-xs' />
+              </FormItem>
+            )}
+          />
 
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-            <div className='space-y-1.5'>
-              <Label htmlFor='edit-contact-email'>Email Address</Label>
-              <Input
-                id='edit-contact-email'
-                type='email'
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name='email'
+              render={({ field }) => (
+                <FormItem className='space-y-1.5'>
+                  <FormLabel>Email Address</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='email'
+                      placeholder='hello@example.com'
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormMessage className='text-xs' />
+                </FormItem>
+              )}
+            />
 
-            <div className='space-y-1.5'>
-              <Label htmlFor='edit-contact-phone'>Phone Number</Label>
-              <Input
-                id='edit-contact-phone'
-                type='tel'
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className='flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-3'>
-            <div className='space-y-0.5'>
-              <Label htmlFor='edit-is-client' className='text-xs font-semibold cursor-pointer'>
-                Paying Client Status
-              </Label>
-              <p className='text-[11px] text-muted-foreground'>
-                Mark whether this contact represents an active paying client.
-              </p>
-            </div>
-            <Switch
-              id='edit-is-client'
-              checked={isClient}
-              onCheckedChange={setIsClient}
+            <FormField
+              control={form.control}
+              name='phone'
+              render={({ field }) => (
+                <FormItem className='space-y-1.5'>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='tel'
+                      placeholder='+1 (555) 000-0000'
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormMessage className='text-xs' />
+                </FormItem>
+              )}
             />
           </div>
+
+          <FormField
+            control={form.control}
+            name='isClient'
+            render={({ field }) => (
+              <div className='flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-3'>
+                <div className='space-y-0.5'>
+                  <Label htmlFor='edit-is-client' className='text-xs font-semibold cursor-pointer'>
+                    Paying Client Status
+                  </Label>
+                  <p className='text-[11px] text-muted-foreground'>
+                    Mark whether this contact represents an active paying client.
+                  </p>
+                </div>
+                <Switch
+                  id='edit-is-client'
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </div>
+            )}
+          />
 
           <DialogFooter className='pt-2'>
             <Button
@@ -160,9 +212,8 @@ export function EditContactDialog({
               Save Changes
             </Button>
           </DialogFooter>
-        </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
 }
-

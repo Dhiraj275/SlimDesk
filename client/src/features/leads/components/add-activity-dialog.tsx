@@ -22,6 +22,7 @@ import {
 } from '@/shared/components/ui/select';
 import { leadsApi } from '../api/leads.api';
 import { ActivityType, Lead, LeadActivity } from '../types/lead.types';
+import { addActivitySchema } from '../schemas/lead.schema';
 import { toast } from 'sonner';
 import {
   IconPhone,
@@ -85,8 +86,14 @@ export function AddActivityDialog({
           : descTrimmed;
     }
 
-    if (!finalTitle) {
-      toast.error('Please enter a note or summary title');
+    const validation = addActivitySchema.safeParse({
+      type,
+      title: finalTitle,
+      description: descTrimmed,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.issues[0]?.message || 'Please enter a note or summary title');
       return;
     }
 

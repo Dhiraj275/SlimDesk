@@ -23,6 +23,8 @@ import {
 } from '@/shared/components/ui/select';
 import { useSettings } from '../context/settings-context';
 import { PaymentProfile } from '../types/settings.types';
+import { paymentProfileSchema } from '../schemas/settings.schema';
+import { toast } from 'sonner';
 import {
   IconCreditCard,
   IconPlus,
@@ -92,8 +94,6 @@ export const PaymentProfilesTab: React.FC = () => {
   };
 
   const handleSave = () => {
-    if (!form.name.trim()) return;
-
     // Auto-generate details text if left empty
     let detailsText = form.details.trim();
     if (!detailsText) {
@@ -104,10 +104,17 @@ export const PaymentProfilesTab: React.FC = () => {
       }
     }
 
+    const payload = { ...form, details: detailsText };
+    const validation = paymentProfileSchema.safeParse(payload);
+    if (!validation.success) {
+      toast.error(validation.error.issues[0]?.message || 'Please check payment profile fields');
+      return;
+    }
+
     if (editingId) {
-      updatePaymentProfile(editingId, { ...form, details: detailsText });
+      updatePaymentProfile(editingId, payload);
     } else {
-      addPaymentProfile({ ...form, details: detailsText });
+      addPaymentProfile(payload);
     }
     setIsOpen(false);
   };

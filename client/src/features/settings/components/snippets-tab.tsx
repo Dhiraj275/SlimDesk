@@ -23,6 +23,7 @@ import {
 } from '@/shared/components/ui/select';
 import { useSettings } from '../context/settings-context';
 import { DocumentSnippet } from '../types/settings.types';
+import { snippetSchema } from '../schemas/settings.schema';
 import {
   IconFileText,
   IconPlus,
@@ -71,7 +72,11 @@ export const SnippetsTab: React.FC = () => {
   };
 
   const handleSave = () => {
-    if (!form.title.trim() || !form.content.trim()) return;
+    const validation = snippetSchema.safeParse(form);
+    if (!validation.success) {
+      toast.error(validation.error.issues[0]?.message || 'Please check snippet fields');
+      return;
+    }
     if (editingId) {
       updateSnippet(editingId, form);
     } else {
