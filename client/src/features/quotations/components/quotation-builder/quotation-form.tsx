@@ -144,22 +144,13 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
         }))
       : [
           {
-            description: 'UI/UX Design & High-Fidelity Prototype',
+            description: '',
             quantity: 1,
-            unit: 'milestone',
-            unitPrice: 35000,
+            unit: 'units',
+            unitPrice: '',
             discount: 0,
             taxRate: 0,
             sortOrder: 0,
-          },
-          {
-            description: 'Next.js Frontend & API Integration',
-            quantity: 1,
-            unit: 'milestone',
-            unitPrice: 45000,
-            discount: 0,
-            taxRate: 0,
-            sortOrder: 1,
           },
         ]
   );
