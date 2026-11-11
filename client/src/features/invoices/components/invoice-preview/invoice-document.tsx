@@ -135,7 +135,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
             From
           </span>
           <div className='font-semibold text-zinc-950 text-sm'>
-            {invoice.freelancerInfo?.name || 'Freelancer Name'}
+            {invoice.freelancerInfo?.name || invoice.freelancerInfo?.businessName || ''}
           </div>
           {invoice.freelancerInfo?.businessName &&
             invoice.freelancerInfo.businessName !== invoice.freelancerInfo.name && (

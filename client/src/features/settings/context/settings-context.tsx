@@ -347,10 +347,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
           paymentProfiles: prev.paymentProfiles.map((p) =>
             p.id === tempId
               ? {
-                  ...p,
-                  id: created.paymentProfileId,
-                  paymentProfileId: created.paymentProfileId,
-                }
+                ...p,
+                id: created.paymentProfileId,
+                paymentProfileId: created.paymentProfileId,
+              }
               : p
           ),
         }));
@@ -532,8 +532,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
           snippet.category === 'notes'
             ? 'notes'
             : snippet.category === 'payment_schedule'
-            ? 'payment_terms'
-            : 'terms',
+              ? 'payment_terms'
+              : 'terms',
         content: snippet.content,
       });
 
@@ -572,8 +572,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
           ? partial.category === 'notes'
             ? 'notes'
             : partial.category === 'payment_schedule'
-            ? 'payment_terms'
-            : 'terms'
+              ? 'payment_terms'
+              : 'terms'
           : undefined,
       });
       toast.success('Snippet updated');

@@ -40,7 +40,7 @@ export class SettingsService {
     private readonly snippetRepository: Repository<DocumentSnippet>,
     @InjectRepository(DocumentNumberSequence)
     private readonly sequenceRepository: Repository<DocumentNumberSequence>,
-  ) {}
+  ) { }
 
   // --- Business Profile ---
 

@@ -188,7 +188,7 @@ export const InvoicePdfDocument: React.FC<InvoicePdfDocumentProps> = ({
               From
             </Text>
             <Text style={tw('font-bold text-primary')}>
-              {invoice.freelancerInfo?.name || 'Freelancer Name'}
+              {invoice.freelancerInfo?.name || invoice.freelancerInfo?.businessName || ''}
             </Text>
             {invoice.freelancerInfo?.businessName &&
               invoice.freelancerInfo.businessName !== invoice.freelancerInfo.name && (

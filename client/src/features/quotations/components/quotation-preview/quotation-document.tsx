@@ -84,7 +84,7 @@ export const QuotationDocument: React.FC<QuotationDocumentProps> = ({
           <p className='text-sm font-semibold text-zinc-600 mt-1'>
             {quotation.freelancerInfo?.businessName ||
               quotation.freelancerInfo?.name ||
-              'Slimdesk Freelance Studio'}
+              ''}
           </p>
         </div>
 

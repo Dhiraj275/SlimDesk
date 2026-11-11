@@ -85,7 +85,7 @@ export const QuotationPdfDocument: React.FC<QuotationPdfDocumentProps> = ({
               {quotation.freelancerInfo?.businessName ||
                 quotation.freelancerInfo?.company ||
                 quotation.freelancerInfo?.name ||
-                'Studio Freelance'}
+                ''}
             </Text>
             {quotation.freelancerInfo?.name &&
               (quotation.freelancerInfo?.businessName || quotation.freelancerInfo?.company) && (

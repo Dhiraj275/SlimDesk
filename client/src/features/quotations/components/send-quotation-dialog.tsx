@@ -58,7 +58,7 @@ export const SendQuotationDialog: React.FC<SendQuotationDialogProps> = ({
     `Hi ${quotation?.clientInfo?.name || 'there'},\n\nPlease find attached the commercial quotation for ${
       quotation?.title || 'our proposed project'
     }. You can review scope, line items, and approve it directly via the secure portal link below.\n\nBest regards,\n${
-      quotation?.freelancerInfo?.name || 'Studio Freelance'
+      quotation?.freelancerInfo?.name || ''
     }`
   );
   const [sending, setSending] = useState(false);
